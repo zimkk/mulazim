@@ -3,7 +3,30 @@
 project_id = "grid-manager"
 
 [db]
-major_version = 15
+major_version = 17
+
+[db.pooler]
+default_pool_size = 15
+max_client_conn = 200
 
 [auth]
 enable_signup = true
+additional_redirect_urls = []
+site_url = "http://localhost:3000"
+
+[auth.email]
+# Personal single-user app: skip the email round-trip on sign up.
+enable_confirmations = false
+max_frequency = "1m0s"
+otp_length = 8
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[storage.analytics]
+enabled = true
+max_namespaces = 10
+
+[storage.image_transformation]
+enabled = true
