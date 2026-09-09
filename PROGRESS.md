@@ -133,9 +133,17 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] `npm run lint` (oxlint) — no errors, 4 style warnings
 - [x] `npm run build` (frontend) succeeds
 - [ ] `npm run tauri dev` smoke test — blocked on Linux system libs
-- [ ] Apply migrations to a real Supabase project; sign up + full CRUD round-trip
-- [ ] Verify dashboard health/staleness/recommendations against seeded data
+- [x] Migrations applied to the live Supabase project `mulazim` (ztmedzpbvsabzfjpyzll) via `supabase db push`; all 5 tables reachable
+- [ ] Sign up + full CRUD round-trip in the running app
+- [ ] Verify dashboard health/staleness/recommendations against real data
 - [ ] Dry-run the release workflow on a tag
+
+## Supabase project
+- Project: `mulazim` / ref `ztmedzpbvsabzfjpyzll` / region ap-southeast-1 / Postgres 17
+- `.env` (gitignored) holds `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and
+  `SUPABASE_ACCESS_TOKEN` + `SUPABASE_PROJECT_REF` for CLI/Management use.
+- CLI is linked (`supabase link`) and logged in (`~/.supabase`).
+- Never add the `service_role` secret here or to the client bundle.
 
 ---
 
