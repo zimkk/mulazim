@@ -1,4 +1,4 @@
--- Combined schema for the Supabase SQL Editor (migrations 0001-0007).
+-- Combined schema (migrations 0001-0008).
 
 -- === supabase/migrations/0001_initial_schema.sql ===
 -- Personal Project Tracker — initial schema
@@ -359,4 +359,31 @@ create index clients_deleted_at_idx  on clients (deleted_at);
 create index subtasks_task_id_idx    on subtasks (task_id, sort_order);
 create index tags_user_id_idx        on tags (user_id);
 create index task_tags_tag_id_idx    on task_tags (tag_id);
+
+-- === supabase/migrations/0008_notifications.sql ===
+-- In-app notification centre (Epic G).
+
+create type notification_kind as enum (
+  'overdue', 'due_soon', 'stale_project', 'needs_review', 'daily_digest'
+);
+
+create table notifications (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  kind       notification_kind not null,
+  title      text not null,
+  body       text,
+  link       text,
+  read_at    timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table notifications enable row level security;
+create policy "notifications — all" on notifications
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create index notifications_user_unread_idx
+  on notifications (user_id, created_at desc)
+  where read_at is null;
+create index notifications_user_created_idx on notifications (user_id, created_at desc);
 

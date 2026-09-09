@@ -150,20 +150,31 @@ try {
   await selects[1].select('urgent') // Status, Priority, Repeat -> [1] is Priority
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
   // date inputs order: [0] Start date, [1] Due date
-  const dueInputs0 = await page.$$('#task-form input[type="date"]')
-  await dueInputs0[1].evaluate((el, v) => {
+  await page.evaluate((v) => {
+    const el = document.querySelectorAll('#task-form input[type="date"]')[1]
     const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value').set
     setter.call(el, v)
     el.dispatchEvent(new Event('input', { bubbles: true }))
     el.dispatchEvent(new Event('change', { bubbles: true }))
+    el.blur()
   }, yesterday)
+  // confirm React accepted it before saving
+  await page.waitForFunction(
+    (v) => document.querySelectorAll('#task-form input[type="date"]')[1]?.value === v,
+    { timeout: 5000 },
+    yesterday,
+  )
   await clickText('button[form="task-form"]', 'Save')
   await page.waitForFunction(() => !document.querySelector('#task-form'), { timeout: 10000 })
   // due_date must round-trip: reopen and read it back.
   await clickText('button', 'First task from UI')
   await byText('h2', 'Edit task')
-  const dateInputs = await page.$$eval('#task-form input[type="date"]', (els) => els.map((e) => e.value))
-  ok('task due_date persisted through edit', dateInputs[1] === yesterday, `got "${dateInputs[1]}"`)
+  await page.waitForFunction(
+    (v) => document.querySelectorAll('#task-form input[type="date"]')[1]?.value === v,
+    { timeout: 8000 },
+    yesterday,
+  )
+  ok('task due_date persisted through edit', true)
   await page.keyboard.press('Escape')
   await page.waitForFunction(() => !document.querySelector('#task-form'), { timeout: 10000 })
   await shot('04-task-added')
@@ -207,6 +218,19 @@ try {
   await page.waitForFunction(() => !document.querySelector('#client-form'), { timeout: 10000 })
   await byText('a, span', 'Northwind Ltd')
   ok('client created and listed', true)
+
+  // --- Today / Upcoming / Trash pages load ---
+  await clickText('a', 'Today')
+  await byText('h1', 'Today')
+  ok('Today view renders', true)
+  await clickText('a', 'Upcoming')
+  await byText('h1', 'Upcoming')
+  ok('Upcoming view renders', true)
+  await clickText('a', 'Trash')
+  await byText('h1', 'Trash')
+  ok('Trash view renders', true)
+  const hasBell = await page.evaluate(() => !!document.querySelector('button[aria-label="Notifications"]'))
+  ok('notification bell in the shell', hasBell)
 
   // --- Activity page ---
   await clickText('a', 'Activity')

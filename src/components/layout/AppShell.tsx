@@ -4,6 +4,8 @@ import { Sidebar } from './Sidebar'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ConnectionBanner } from '@/components/ConnectionBanner'
 import { GlobalOverlays } from '@/components/GlobalOverlays'
+import { NotificationBell } from '@/components/NotificationBell'
+import { NotificationEngine } from '@/lib/notificationEngine'
 import { SkeletonRows } from '@/components/ui/States'
 
 export function AppShell() {
@@ -12,15 +14,28 @@ export function AppShell() {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <ConnectionBanner />
+        <div
+          className="flex h-10 shrink-0 items-center justify-end border-b border-[--color-border] bg-[--color-surface] px-4"
+          data-tauri-drag-region
+        >
+          <NotificationBell />
+        </div>
         <main className="flex-1 overflow-y-auto">
           <ErrorBoundary>
-            <Suspense fallback={<div className="p-6"><SkeletonRows rows={6} /></div>}>
+            <Suspense
+              fallback={
+                <div className="p-6">
+                  <SkeletonRows rows={6} />
+                </div>
+              }
+            >
               <Outlet />
             </Suspense>
           </ErrorBoundary>
         </main>
       </div>
       <GlobalOverlays />
+      <NotificationEngine />
     </div>
   )
 }
