@@ -60,15 +60,17 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      # The updater key secret can pick up a stray trailing newline / CR when
-      # it's set (web-UI paste, editors); Tauri's base64 decoder then rejects it
-      # ("Invalid symbol 61" = the '=' padding no longer at the string end).
-      # Re-export it with all whitespace stripped. The redirect keeps the value
-      # out of the log, and GitHub still masks it.
+      # The updater key secret often picks up junk when it's set: a trailing
+      # newline/CR, or the "%" end-of-line marker that zsh prints and a copy
+      # grabs. Tauri's base64 decoder then throws "Invalid symbol N". Keep only
+      # real base64 characters, then re-export. The redirect keeps the value out
+      # of the log; GitHub still masks it.
       - name: Normalize the updater signing key
         shell: bash
         run: |
-          printf 'TAURI_SIGNING_PRIVATE_KEY=%s\n' "$(printf '%s' "$SIGNING_KEY" | tr -d ' \t\r\n')" >> "$GITHUB_ENV"
+          clean=$(printf '%s' "$SIGNING_KEY" | tr -cd 'A-Za-z0-9+/=')
+          echo "signing key length after cleanup: ${#clean}"
+          printf 'TAURI_SIGNING_PRIVATE_KEY=%s\n' "$clean" >> "$GITHUB_ENV"
         env:
           SIGNING_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
