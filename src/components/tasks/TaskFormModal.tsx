@@ -170,7 +170,13 @@ export function TaskFormModal({
               ))}
             </Select>
           </FormRow>
-          <FormRow label="Estimate (min)">
+          <FormRow
+            label={
+              task?.actual_minutes
+                ? `Estimate (min) · ${task.actual_minutes}m tracked`
+                : 'Estimate (min)'
+            }
+          >
             <Input
               type="number"
               min={0}

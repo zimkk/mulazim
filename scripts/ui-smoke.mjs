@@ -179,6 +179,21 @@ try {
   await page.waitForFunction(() => !document.querySelector('#task-form'), { timeout: 10000 })
   await shot('04-task-added')
 
+  // --- Time tracking: start a timer on the task, see the pill, stop it ---
+  {
+    const startBtn = await page.$('button[aria-label="Start timer"]')
+    await startBtn.click()
+    await page.waitForFunction(() => !!document.querySelector('button[aria-label="Stop timer"]'), {
+      timeout: 6000,
+    })
+    ok('starting a timer shows the running pill', true)
+    await (await page.$('button[aria-label="Stop timer"]')).click()
+    await page.waitForFunction(() => !document.querySelector('button[aria-label="Stop timer"]'), {
+      timeout: 6000,
+    })
+    ok('stopping a timer clears it', true)
+  }
+
   // Back to the dashboard — it should now show real sections, not a blank grid.
   await clickText('a', 'Dashboard')
   await byText('h1', 'Good ')

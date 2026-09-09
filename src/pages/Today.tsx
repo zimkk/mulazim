@@ -6,11 +6,25 @@ import { TaskRow } from '@/components/tasks/TaskRow'
 import { TaskFormModal } from '@/components/tasks/TaskFormModal'
 import { QuickAddTask } from '@/components/tasks/QuickAddTask'
 import { useAllOpenTasks } from '@/lib/api/tasks'
+import { useTimeReport } from '@/lib/api/time'
 import { greeting, isOverdue, toDate } from '@/lib/utils/dates'
 import type { Task } from '@/types/database'
 
+function fmtMins(m: number): string {
+  const h = Math.floor(m / 60)
+  return h > 0 ? `${h}h ${m % 60}m` : `${m}m`
+}
+
+function weekStartIso() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)) // Monday
+  return d.toISOString()
+}
+
 export default function Today() {
   const { data, isLoading, isError, refetch } = useAllOpenTasks()
+  const timeReport = useTimeReport(weekStartIso())
   const [edit, setEdit] = useState<Task | null>(null)
 
   const tasks = data ?? []
@@ -50,6 +64,24 @@ export default function Today() {
             onEdit={setEdit}
             empty="No high-priority or in-progress work without a date."
           />
+
+          {timeReport.data && timeReport.data.total > 0 && (
+            <Card>
+              <CardHeader title="Time this week" />
+              <div className="divide-y divide-[--color-border]">
+                <div className="flex justify-between px-4 py-2 text-sm font-medium">
+                  <span>Total</span>
+                  <span>{fmtMins(timeReport.data.total)}</span>
+                </div>
+                {timeReport.data.rows.map((r) => (
+                  <div key={r.name} className="flex justify-between px-4 py-1.5 text-xs text-[--color-text-muted]">
+                    <span className="truncate">{r.name}</span>
+                    <span>{fmtMins(r.minutes)}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
       )}
 

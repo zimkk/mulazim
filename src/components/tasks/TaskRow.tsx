@@ -1,4 +1,4 @@
-import { Check, Circle, Repeat } from 'lucide-react'
+import { Check, Circle, Play, Repeat, Square } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Badge, PriorityBadge } from '@/components/ui/Badge'
 import { Select } from '@/components/ui/Field'
@@ -7,6 +7,7 @@ import { TASK_STATUSES, TASK_STATUS_LABEL } from '@/lib/constants'
 import { dueLabel, isOverdue } from '@/lib/utils/dates'
 import { useUpdateTask } from '@/lib/api/tasks'
 import { useTaskTagMap } from '@/lib/api/tags'
+import { useRunningTimer, useStartTimer, useStopTimer } from '@/lib/api/time'
 import type { Task, TaskStatus, TaskWithProject } from '@/types/database'
 
 export function TaskRow({
@@ -20,6 +21,10 @@ export function TaskRow({
 }) {
   const update = useUpdateTask()
   const tagMap = useTaskTagMap()
+  const { data: running } = useRunningTimer()
+  const startTimer = useStartTimer()
+  const stopTimer = useStopTimer()
+  const isTiming = running?.task_id === task.id
   const tags = tagMap.get(task.id) ?? []
   const done = task.status === 'done'
   const overdue = !done && isOverdue(task.due_date)
@@ -75,6 +80,25 @@ export function TaskRow({
         )}
       </div>
 
+      {!done && (
+        <button
+          onClick={() =>
+            isTiming && running
+              ? stopTimer.mutate(running)
+              : startTimer.mutate({ taskId: task.id, projectId: task.project_id })
+          }
+          className={cn(
+            'rounded p-1',
+            isTiming
+              ? 'text-[--color-accent]'
+              : 'text-[--color-text-subtle] hover:text-[--color-text]',
+          )}
+          aria-label={isTiming ? 'Stop timer' : 'Start timer'}
+          title={isTiming ? 'Stop timer' : 'Track time on this task'}
+        >
+          {isTiming ? <Square className="size-3.5 fill-current" /> : <Play className="size-3.5" />}
+        </button>
+      )}
       {task.due_date && <Badge tone={overdue ? 'overdue' : 'neutral'}>{dueLabel(task.due_date)}</Badge>}
       <PriorityBadge priority={task.priority} />
 

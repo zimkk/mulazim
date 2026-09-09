@@ -5,6 +5,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ConnectionBanner } from '@/components/ConnectionBanner'
 import { GlobalOverlays } from '@/components/GlobalOverlays'
 import { NotificationBell } from '@/components/NotificationBell'
+import { TimerPill } from '@/components/TimerPill'
 import { NotificationEngine } from '@/lib/notificationEngine'
 import { SkeletonRows } from '@/components/ui/States'
 
@@ -15,9 +16,10 @@ export function AppShell() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <ConnectionBanner />
         <div
-          className="flex h-10 shrink-0 items-center justify-end border-b border-[--color-border] bg-[--color-surface] px-4"
+          className="flex h-10 shrink-0 items-center justify-end gap-3 border-b border-[--color-border] bg-[--color-surface] px-4"
           data-tauri-drag-region
         >
+          <TimerPill />
           <NotificationBell />
         </div>
         <main className="flex-1 overflow-y-auto">
