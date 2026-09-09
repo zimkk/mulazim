@@ -13,7 +13,7 @@ import { createClient } from '@supabase/supabase-js'
 
 // --- tiny .env loader (no dependency) ---
 const env = Object.fromEntries(
-  readFileSync(new URL('../.env', import.meta.url), 'utf8')
+  (() => { try { return readFileSync(new URL('../.env', import.meta.url), 'utf8') } catch { console.error('This script needs a .env with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (see .env.example).'); process.exit(1) } })()
     .split('\n')
     .filter((l) => l && !l.startsWith('#') && l.includes('='))
     .map((l) => {

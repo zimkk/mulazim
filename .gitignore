@@ -24,13 +24,23 @@ dist-ssr
 *.sw?
 
 # App-specific
-.env
-.env.local
 dist/
 src-tauri/target/
 src-tauri/gen/
 *.tsbuildinfo
 .artifacts/
 
-# Signing keys — never commit
+# Environment / credentials — never commit (keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Signing keys, certs, anything private — never commit
 .secrets/
+*.pem
+*.key
+*.p12
+*.keystore
+
+# Local editor / tooling state
+.claude/

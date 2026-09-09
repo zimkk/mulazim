@@ -14,7 +14,7 @@ const CHROME = process.env.CHROME || '/usr/bin/chromium'
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const env = Object.fromEntries(
-  readFileSync(new URL('../.env', import.meta.url), 'utf8')
+  (() => { try { return readFileSync(new URL('../.env', import.meta.url), 'utf8') } catch { console.error('This script needs a .env with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (see .env.example).'); process.exit(1) } })()
     .split('\n')
     .filter((l) => l && !l.startsWith('#') && l.includes('='))
     .map((l) => {
@@ -165,13 +165,16 @@ try {
     yesterday,
   )
   await clickText('button[form="task-form"]', 'Save')
-  await page.waitForFunction(() => !document.querySelector('#task-form'), { timeout: 10000 })
-  // due_date must round-trip: reopen and read it back.
+  await page.waitForFunction(() => !document.querySelector('#task-form'), { timeout: 20000 })
+  // due_date must round-trip: reopen and read it back. (Generous timeout — this
+  // dev box's clock runs ahead of Supabase, so a request can 401 and retry with
+  // backoff before the write lands.)
+  await new Promise((r) => setTimeout(r, 1500))
   await clickText('button', 'First task from UI')
   await byText('h2', 'Edit task')
   await page.waitForFunction(
     (v) => document.querySelectorAll('#task-form input[type="date"]')[1]?.value === v,
-    { timeout: 8000 },
+    { timeout: 20000 },
     yesterday,
   )
   ok('task due_date persisted through edit', true)

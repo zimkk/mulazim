@@ -1,83 +1,82 @@
 # Release & auto-update runbook
 
-The pipeline (`.github/workflows/release.yml`) is **tag-driven**: push a `v*` tag →
-GitHub Actions builds + signs the app on macOS, Linux and Windows runners in
-parallel, generates the updater metadata (`latest.json`), and publishes a GitHub
-Release. Installed apps pick it up on next launch (`ARCHITECTURE.md` §33–§39).
+`.github/workflows/release.yml` is **tag-driven**: push a `v*` tag → GitHub
+Actions builds + signs the app on macOS, Linux and Windows runners in parallel,
+generates the updater manifest (`latest.json`), and publishes a GitHub Release.
+Installed apps pick it up on next launch (`ARCHITECTURE.md` §33–§39).
 
 ## One-time setup
 
 ### 1. Updater signing key
 
-Generated at `.secrets/tauri-updater.key` (+ `.pub`), password **empty**.
-`.secrets/` is git-ignored — **do not commit the private key**. Keep a backup;
-if it's lost, existing installs can never be updated again. The **public** key is
-wired into `src-tauri/tauri.conf.json` → `plugins.updater.pubkey`, and the
-endpoint is `https://github.com/zimkk/mulazim/releases/latest/download/latest.json`.
+```bash
+npm run tauri signer generate -- -w .secrets/updater.key   # choose a password or leave empty
+```
 
-### 2. GitHub Actions secrets — all four set ✅
+`.secrets/` is git-ignored — **never commit the private key**, and keep a backup
+(lose it and existing installs can never be updated again). Put the **public**
+key in `src-tauri/tauri.conf.json` → `plugins.updater.pubkey`, and set
+`plugins.updater.endpoints` to your repo's
+`https://github.com/<owner>/<repo>/releases/latest/download/latest.json`.
+
+### 2. GitHub Actions secrets
 
 | Secret | Value |
 |---|---|
-| `VITE_SUPABASE_URL` | `https://ztmedzpbvsabzfjpyzll.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | the public anon key from `.env` |
-| `TAURI_SIGNING_PRIVATE_KEY` | contents of `.secrets/tauri-updater.key` |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | *(empty)* |
-
-To rotate/re-set:
+| `VITE_SUPABASE_URL` | your Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | the project's public anon key |
+| `TAURI_SIGNING_PRIVATE_KEY` | contents of `.secrets/updater.key` |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | the key's password (empty string if none) |
 
 ```bash
-gh secret set TAURI_SIGNING_PRIVATE_KEY --repo zimkk/mulazim < .secrets/tauri-updater.key
-gh secret set VITE_SUPABASE_ANON_KEY   --repo zimkk/mulazim < <(grep -oP '(?<=^VITE_SUPABASE_ANON_KEY=).*' .env)
+gh secret set VITE_SUPABASE_URL            --body "https://<ref>.supabase.co"
+gh secret set VITE_SUPABASE_ANON_KEY       --body "<anon key>"
+gh secret set TAURI_SIGNING_PRIVATE_KEY    < .secrets/updater.key
+gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --body ""
 ```
+
+The workflow normalizes `TAURI_SIGNING_PRIVATE_KEY` (strips any stray
+whitespace / `%` a paste can add) before use.
 
 ### 3. (Optional) macOS notarization
 
-Unsigned builds work but Gatekeeper warns ("right-click → Open" the first time).
-To ship a notarized `.dmg` (needs a paid Apple Developer account):
-
-1. Add these repo secrets: `APPLE_CERTIFICATE` (base64 of a "Developer ID
-   Application" .p12), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`
-   (`Developer ID Application: Name (TEAMID)`), `APPLE_ID`, `APPLE_PASSWORD`
-   (an app-specific password), `APPLE_TEAM_ID`.
-2. Uncomment / add the matching `APPLE_*: ${{ secrets.APPLE_* }}` lines under
-   the tauri-action `env:` block in `release.yml`. **Only add them once the
-   secrets exist** — with empty secrets, `tauri-action` tries to import an empty
-   keychain certificate and the macOS job fails.
-
-Windows Authenticode signing is similarly optional (an EV/OV code-signing cert).
+Unsigned builds run but Gatekeeper warns ("right-click → Open" the first time).
+To notarize (needs a paid Apple Developer account): add the `APPLE_CERTIFICATE`,
+`APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`,
+`APPLE_PASSWORD`, `APPLE_TEAM_ID` secrets, then add the matching
+`APPLE_*: ${{ secrets.APPLE_* }}` lines under the `tauri-action` `env:` block.
+**Only add the env lines once the secrets exist** — empty ones make the macOS
+job fail on an empty keychain import.
 
 ## Cutting a release
 
 1. Bump the version in **both** `package.json` and `src-tauri/tauri.conf.json`
-   (identical — SemVer, `ARCHITECTURE.md` §34). Update `Cargo.toml` if you like.
+   (identical, SemVer). Optionally `src-tauri/Cargo.toml` too.
 2. Commit, tag, push:
    ```bash
-   git commit -am "Release v0.2.0"
-   git tag v0.2.0
-   git push origin main v0.2.0
+   git commit -am "Release vX.Y.Z"
+   git tag vX.Y.Z
+   git push origin main vX.Y.Z
    ```
-3. Watch it: `gh run watch --repo zimkk/mulazim`.
-4. On success the Release has, per platform:
-   - **Windows** `Grid Manager_x.y.z_x64-setup.exe` (NSIS, bundles the WebView2
-     bootstrapper) + `_x64_en-US.msi`
-   - **macOS** `Grid Manager_x.y.z_universal.dmg` + `.app.tar.gz` (updater)
-   - **Linux** `grid-manager_x.y.z_amd64.deb`, `grid-manager-x.y.z-1.x86_64.rpm`,
-     `grid-manager_x.y.z_amd64.AppImage`
-   - `latest.json` + `*.sig` — the updater manifest and detached signatures
-5. Installed apps show "Update available" on next launch → one click → relaunch.
+3. Watch: `gh run watch`. On success the Release carries, per platform:
+   - Windows `*_x64-setup.exe` (NSIS, embeds the WebView2 bootstrapper) + `*.msi`
+   - macOS `*_universal.dmg` + `*.app.tar.gz` (updater)
+   - Linux `*.deb`, `*.rpm`, `*.AppImage`
+   - `latest.json` + `*.sig`
+4. Installed apps show "Update available" on next launch.
 
-## Re-cutting the same tag (before it's shipped to anyone)
+### Re-cutting a tag before it's shipped to anyone
 
 ```bash
-gh run cancel <run-id> --repo zimkk/mulazim   # if one is mid-flight
-git push origin :refs/tags/v0.1.0             # delete remote tag
-git tag -d v0.1.0                             # delete local tag
-# fix things, commit, then re-tag:
-git tag v0.1.0 && git push origin v0.1.0
+gh run cancel <run-id>              # if one is mid-flight
+git push origin :refs/tags/vX.Y.Z   # delete remote tag
+git tag -d vX.Y.Z
+# fix, commit, then re-tag and push
 ```
 
-## Schema changes
+## Notes
 
-Add a migration under `supabase/migrations/`, `supabase db push`, verify, **then**
-tag the release. Existing cloud data must stay compatible (`ARCHITECTURE.md` §40).
+- The repo must be **public** for the release download URLs and the auto-updater
+  to work without authentication.
+- Schema changes: add a migration, `supabase db push`, verify, **then** tag the
+  release. Cloud data must stay compatible (`ARCHITECTURE.md` §40).

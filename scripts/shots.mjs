@@ -7,7 +7,7 @@ const BASE = 'http://localhost:4173'
 const OUT = fileURLToPath(new URL('../.artifacts/', import.meta.url))
 mkdirSync(OUT, { recursive: true })
 const env = Object.fromEntries(
-  readFileSync(new URL('../.env', import.meta.url), 'utf8')
+  (() => { try { return readFileSync(new URL('../.env', import.meta.url), 'utf8') } catch { console.error('This script needs a .env with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (see .env.example).'); process.exit(1) } })()
     .split('\n')
     .filter((l) => l && !l.startsWith('#') && l.includes('='))
     .map((l) => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()]),
