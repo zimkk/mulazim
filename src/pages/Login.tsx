@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { FormRow, Input } from '@/components/ui/Field'
 import { Card, CardBody } from '@/components/ui/Card'
+import { Logo } from '@/components/ui/Logo'
 import { useToast } from '@/components/Toast'
 import { useAuthStore } from '@/stores/authStore'
 
