@@ -39,6 +39,7 @@ export function ProjectFormModal({
     priority: 'medium',
     deadline: null,
     client_id: defaultClientId ?? null,
+    review_interval_days: null,
   })
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export function ProjectFormModal({
       priority: project?.priority ?? 'medium',
       deadline: project?.deadline ?? null,
       client_id: project?.client_id ?? defaultClientId ?? null,
+      review_interval_days: project?.review_interval_days ?? null,
     })
   }, [open, project, defaultClientId])
 
@@ -169,6 +171,18 @@ export function ProjectFormModal({
             />
           </FormRow>
         </div>
+
+        <FormRow label="Review every (days)">
+          <Input
+            type="number"
+            min={0}
+            placeholder="e.g. 7 — leave blank for no review cadence"
+            value={form.review_interval_days ?? ''}
+            onChange={(e) =>
+              set('review_interval_days', e.target.value ? Number(e.target.value) : null)
+            }
+          />
+        </FormRow>
 
         <FormRow label="Description">
           <Textarea

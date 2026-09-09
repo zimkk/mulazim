@@ -1,12 +1,15 @@
 import { NavLink } from 'react-router-dom'
 import {
   Activity,
+  CalendarDays,
+  FolderKanban,
   LayoutDashboard,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  Sun,
+  Trash2,
   Users,
-  FolderKanban,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { useUiStore } from '@/stores/uiStore'
@@ -14,9 +17,12 @@ import { UpdateManager } from '@/components/updates/UpdateManager'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/today', label: 'Today', icon: Sun, end: false },
+  { to: '/upcoming', label: 'Upcoming', icon: CalendarDays, end: false },
   { to: '/projects', label: 'Projects', icon: FolderKanban, end: false },
   { to: '/clients', label: 'Clients', icon: Users, end: false },
   { to: '/activity', label: 'Activity', icon: Activity, end: false },
+  { to: '/trash', label: 'Trash', icon: Trash2, end: false },
   { to: '/settings', label: 'Settings', icon: Settings, end: false },
 ]
 

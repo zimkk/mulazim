@@ -1,19 +1,22 @@
-import { lazy, useEffect } from 'react'
-import { createHashRouter, RouterProvider } from 'react-router-dom'
+import { lazy, useEffect, useRef } from 'react'
+import { createHashRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { RequireAuth } from '@/components/RequireAuth'
-import { SettingsPersister, useSettingsQuery } from '@/lib/api/settings'
+import { SettingsPersister, useSettings, useSettingsQuery } from '@/lib/api/settings'
 import { applyAppearance, cacheAppearance } from '@/lib/appearance'
 import { useAuthStore } from '@/stores/authStore'
 
 const Login = lazy(() => import('@/pages/Login'))
 const Setup = lazy(() => import('@/pages/Setup'))
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
+const Today = lazy(() => import('@/pages/Today'))
+const Upcoming = lazy(() => import('@/pages/Upcoming'))
 const Projects = lazy(() => import('@/pages/Projects'))
 const ProjectDetail = lazy(() => import('@/pages/ProjectDetail'))
 const Clients = lazy(() => import('@/pages/Clients'))
 const ClientDetail = lazy(() => import('@/pages/ClientDetail'))
 const ActivityPage = lazy(() => import('@/pages/ActivityPage'))
+const Trash = lazy(() => import('@/pages/Trash'))
 const Settings = lazy(() => import('@/pages/Settings'))
 
 const router = createHashRouter([
@@ -27,17 +30,34 @@ const router = createHashRouter([
       </RequireAuth>
     ),
     children: [
-      { index: true, element: <Dashboard /> },
+      { index: true, element: <LandingRedirect /> },
+      { path: 'today', element: <Today /> },
+      { path: 'upcoming', element: <Upcoming /> },
       { path: 'projects', element: <Projects /> },
       { path: 'projects/:id', element: <ProjectDetail /> },
       { path: 'clients', element: <Clients /> },
       { path: 'clients/:id', element: <ClientDetail /> },
       { path: 'activity', element: <ActivityPage /> },
+      { path: 'trash', element: <Trash /> },
       { path: 'settings', element: <Settings /> },
       { path: 'settings/:section', element: <Settings /> },
     ],
   },
 ])
+
+/** The index route: honour the configured landing view once per app launch. */
+function LandingRedirect() {
+  const { general } = useSettings()
+  const decided = useRef(sessionStorage.getItem('gm-landed') === '1')
+  if (!decided.current) {
+    decided.current = true
+    sessionStorage.setItem('gm-landed', '1')
+    if (general.landingView === 'today') return <Navigate to="/today" replace />
+    if (general.landingView === 'upcoming') return <Navigate to="/upcoming" replace />
+    if (general.landingView === 'projects') return <Navigate to="/projects" replace />
+  }
+  return <Dashboard />
+}
 
 /** Keeps <html> in sync with the user's appearance settings.
  *  Until the synced settings have loaded, the boot cache (main.tsx) stands — no flash. */

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Archive, Mail, Pencil, Plus } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, Archive, Mail, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Page } from '@/components/layout/AppShell'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -10,15 +10,20 @@ import { useToast } from '@/components/Toast'
 import { ProjectRow } from '@/components/projects/ProjectRow'
 import { ClientFormModal } from '@/components/clients/ClientFormModal'
 import { ProjectFormModal } from '@/components/projects/ProjectFormModal'
-import { useArchiveClient, useClient } from '@/lib/api/clients'
+import { useArchiveClient, useClient, useDeleteClient } from '@/lib/api/clients'
 import { useProjectsByClient } from '@/lib/api/projects'
+import { useSettings } from '@/lib/api/settings'
+import { confirmDialog } from '@/lib/confirm'
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { notify } = useToast()
   const client = useClient(id)
   const projects = useProjectsByClient(id)
   const archive = useArchiveClient()
+  const del = useDeleteClient()
+  const { general } = useSettings()
   const [editing, setEditing] = useState(false)
   const [creatingProject, setCreatingProject] = useState(false)
 
@@ -42,6 +47,16 @@ export default function ClientDetail() {
   async function onArchive() {
     await archive.mutateAsync(c.id)
     notify('Client archived', 'success')
+  }
+
+  async function onDelete() {
+    if (general.confirmBeforeDelete) {
+      const yes = await confirmDialog(`Move "${c.name}" to Trash? Its projects are kept.`)
+      if (!yes) return
+    }
+    await del.mutateAsync(c.id)
+    notify('Client moved to trash', 'success')
+    navigate('/clients')
   }
 
   return (
@@ -79,6 +94,14 @@ export default function ClientDetail() {
             disabled={c.status === 'archived'}
           >
             Archive
+          </Button>
+          <Button
+            variant="danger"
+            icon={<Trash2 className="size-3.5" />}
+            onClick={onDelete}
+            loading={del.isPending}
+          >
+            Delete
           </Button>
         </div>
       </div>

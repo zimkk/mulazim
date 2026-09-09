@@ -1,35 +1,38 @@
-import { Check, Circle } from 'lucide-react'
+import { Check, Circle, Repeat } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Badge, PriorityBadge } from '@/components/ui/Badge'
 import { Select } from '@/components/ui/Field'
 import { cn } from '@/lib/utils/cn'
 import { TASK_STATUSES, TASK_STATUS_LABEL } from '@/lib/constants'
 import { dueLabel, isOverdue } from '@/lib/utils/dates'
 import { useUpdateTask } from '@/lib/api/tasks'
-import type { Task, TaskStatus } from '@/types/database'
+import { useTaskTagMap } from '@/lib/api/tags'
+import type { Task, TaskStatus, TaskWithProject } from '@/types/database'
 
 export function TaskRow({
   task,
   onEdit,
+  showProject = false,
 }: {
-  task: Task
+  task: Task | TaskWithProject
   onEdit?: (task: Task) => void
+  showProject?: boolean
 }) {
   const update = useUpdateTask()
+  const tagMap = useTaskTagMap()
+  const tags = tagMap.get(task.id) ?? []
   const done = task.status === 'done'
   const overdue = !done && isOverdue(task.due_date)
+  const projectName = 'project' in task ? task.project?.name : undefined
 
   function setStatus(status: TaskStatus) {
     update.mutate({ id: task.id, projectId: task.project_id, previousStatus: task.status, status })
   }
 
-  function toggleDone() {
-    setStatus(done ? 'todo' : 'done')
-  }
-
   return (
     <div className="flex items-center gap-3 border-b border-[--color-border] px-3 py-2 last:border-b-0">
       <button
-        onClick={toggleDone}
+        onClick={() => setStatus(done ? 'todo' : 'done')}
         className={cn(
           'flex size-5 shrink-0 items-center justify-center rounded-full border',
           done
@@ -41,19 +44,38 @@ export function TaskRow({
         {done ? <Check className="size-3" /> : <Circle className="size-3" />}
       </button>
 
-      <button
-        onClick={() => onEdit?.(task)}
-        className={cn(
-          'min-w-0 flex-1 truncate text-left text-sm',
-          done ? 'text-[--color-text-subtle] line-through' : 'text-[--color-text]',
+      <div className="min-w-0 flex-1">
+        <button
+          onClick={() => onEdit?.(task)}
+          className={cn(
+            'block max-w-full truncate text-left text-sm',
+            done ? 'text-[--color-text-subtle] line-through' : 'text-[--color-text]',
+          )}
+        >
+          {task.title}
+        </button>
+        {(showProject || tags.length > 0 || task.recurrence !== 'none') && (
+          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[--color-text-muted]">
+            {showProject && projectName && 'project' in task && task.project && (
+              <Link
+                to={`/projects/${task.project.id}`}
+                className="hover:text-[--color-text]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {projectName}
+              </Link>
+            )}
+            {task.recurrence !== 'none' && <Repeat className="size-3" />}
+            {tags.map((t) => (
+              <span key={t.id} className="rounded bg-[--color-surface-2] px-1">
+                {t.name}
+              </span>
+            ))}
+          </div>
         )}
-      >
-        {task.title}
-      </button>
+      </div>
 
-      {task.due_date && (
-        <Badge tone={overdue ? 'overdue' : 'neutral'}>{dueLabel(task.due_date)}</Badge>
-      )}
+      {task.due_date && <Badge tone={overdue ? 'overdue' : 'neutral'}>{dueLabel(task.due_date)}</Badge>}
       <PriorityBadge priority={task.priority} />
 
       <Select

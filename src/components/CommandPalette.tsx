@@ -11,8 +11,10 @@ import {
 } from 'lucide-react'
 import { useClients } from '@/lib/api/clients'
 import { useProjects } from '@/lib/api/projects'
+import { useAllOpenTasks } from '@/lib/api/tasks'
 import { useUiStore } from '@/stores/uiStore'
 import { cn } from '@/lib/utils/cn'
+import { ListChecks } from 'lucide-react'
 
 interface Item {
   id: string
@@ -29,6 +31,7 @@ export function CommandPalette() {
   const navigate = useNavigate()
   const { data: projects } = useProjects()
   const { data: clients } = useClients()
+  const { data: tasks } = useAllOpenTasks()
   const [q, setQ] = useState('')
   const [active, setActive] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -69,13 +72,20 @@ export function CommandPalette() {
       icon: Users,
       run: go(`/clients/${c.id}`),
     }))
-    return [...nav, ...proj, ...cli]
-  }, [projects, clients, navigate, setOverlay])
+    const tsk: Item[] = (tasks ?? []).map((t) => ({
+      id: `t-${t.id}`,
+      label: t.title,
+      hint: t.project?.name ?? 'Task',
+      icon: ListChecks,
+      run: t.project ? go(`/projects/${t.project.id}`) : () => setOverlay('none'),
+    }))
+    return [...nav, ...proj, ...cli, ...tsk]
+  }, [projects, clients, tasks, navigate, setOverlay])
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase()
     if (!t) return items.slice(0, 8)
-    return items.filter((i) => i.label.toLowerCase().includes(t)).slice(0, 12)
+    return items.filter((i) => i.label.toLowerCase().includes(t)).slice(0, 15)
   }, [items, q])
 
   useEffect(() => {

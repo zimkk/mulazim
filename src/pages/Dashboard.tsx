@@ -9,10 +9,12 @@ import { ActivityTimeline } from '@/components/activity/ActivityTimeline'
 import { useDashboard } from '@/lib/api/dashboard'
 import { useRecentActivity } from '@/lib/api/activity'
 import { displayNameOf, useProfile } from '@/lib/api/profile'
+import { useProjects } from '@/lib/api/projects'
 import { useAuthStore } from '@/stores/authStore'
-import { useStaleThresholds } from '@/lib/api/settings'
+import { useSettings, useStaleThresholds } from '@/lib/api/settings'
+import { DASHBOARD_CARD_IDS, type DashboardCardId } from '@/lib/settings'
 import { projectHealth } from '@/lib/utils/health'
-import { dueLabel, greeting, relativeTime } from '@/lib/utils/dates'
+import { daysSince, dueLabel, greeting, relativeTime } from '@/lib/utils/dates'
 import type { ProjectWithStats, TaskWithProject } from '@/types/database'
 
 export default function Dashboard() {
@@ -20,6 +22,127 @@ export default function Dashboard() {
   const { data: profile } = useProfile()
   const d = useDashboard()
   const activity = useRecentActivity(12)
+  const { data: projects } = useProjects()
+  const { workflow } = useSettings()
+
+  const needsReview = (projects ?? []).filter(
+    (p) =>
+      p.status === 'active' &&
+      p.review_interval_days != null &&
+      daysSince(p.last_reviewed_at ?? p.created_at) >= p.review_interval_days,
+  )
+
+  const order = (
+    workflow.dashboardCards.length ? workflow.dashboardCards : [...DASHBOARD_CARD_IDS]
+  ).filter((id): id is DashboardCardId => (DASHBOARD_CARD_IDS as readonly string[]).includes(id))
+
+  function renderCard(id: DashboardCardId) {
+    switch (id) {
+      case 'recommended':
+        return (
+          <Card key={id}>
+            <CardHeader
+              title={
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="size-4 text-[--color-accent]" /> Recommended focus
+                </span>
+              }
+              count={d.recommendations.length}
+            />
+            {d.recommendations.length === 0 ? (
+              <EmptyState title="Nothing pressing" description="No high-signal work right now — nice." />
+            ) : (
+              <ol className="divide-y divide-[--color-border]">
+                {d.recommendations.map(({ task, factors }, i) => (
+                  <li key={task.id} className="flex items-start gap-3 px-4 py-2.5">
+                    <span className="text-sm font-semibold text-[--color-text-subtle]">{i + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <TaskLink task={task} />
+                      <p className="mt-0.5 text-xs text-[--color-text-muted]">
+                        {task.project?.name}
+                        {factors.length > 0 && ` · ${factors.join(', ')}`}
+                      </p>
+                    </div>
+                    <PriorityBadge priority={task.priority} />
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Card>
+        )
+      case 'overdue':
+        return (
+          <TaskCard
+            key={id}
+            title="Overdue"
+            icon={<AlertOctagon className="size-4 text-[--color-overdue]" />}
+            tasks={d.overdueTasks}
+            emptyTitle="Nothing overdue"
+          />
+        )
+      case 'dueSoon':
+        return (
+          <TaskCard
+            key={id}
+            title="Due today & soon"
+            icon={<CalendarClock className="size-4 text-[--color-attention]" />}
+            tasks={d.dueSoonTasks}
+            emptyTitle="Nothing due in the next few days"
+          />
+        )
+      case 'highPriority':
+        return (
+          <TaskCard
+            key={id}
+            title="High & urgent"
+            icon={<Flame className="size-4 text-[--color-attention]" />}
+            tasks={d.highPriorityTasks}
+            emptyTitle="No high-priority work queued"
+          />
+        )
+      case 'inProgress':
+        return (
+          <TaskCard key={id} title="In progress" tasks={d.inProgressTasks} emptyTitle="Nothing in progress" />
+        )
+      case 'stale':
+        return (
+          <ProjectCard
+            key={id}
+            title="Stale projects"
+            projects={d.staleProjects}
+            emptyTitle="No stale projects"
+            emptyDesc="Everything's had activity recently."
+          />
+        )
+      case 'attention':
+        return (
+          <ProjectCard
+            key={id}
+            title="Needs attention"
+            projects={d.attentionProjects}
+            emptyTitle="No projects need attention"
+          />
+        )
+      case 'needsReview':
+        return (
+          <ProjectCard
+            key={id}
+            title="Needs review"
+            projects={needsReview}
+            emptyTitle="No projects due for review"
+          />
+        )
+      case 'activity':
+        return (
+          <Card key={id} className="lg:col-span-2">
+            <CardHeader title="Recent activity" />
+            <ActivityTimeline items={activity.data} loading={activity.isLoading} />
+          </Card>
+        )
+      default:
+        return null
+    }
+  }
 
   if (d.isError) {
     return (
@@ -43,84 +166,7 @@ export default function Dashboard() {
       {d.isLoading ? (
         <SkeletonRows rows={8} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader
-              title={
-                <span className="flex items-center gap-1.5">
-                  <Sparkles className="size-4 text-[--color-accent]" /> Recommended focus
-                </span>
-              }
-              count={d.recommendations.length}
-            />
-            {d.recommendations.length === 0 ? (
-              <EmptyState title="Nothing pressing" description="No high-signal work right now — nice." />
-            ) : (
-              <ol className="divide-y divide-[--color-border]">
-                {d.recommendations.map(({ task, factors }, i) => (
-                  <li key={task.id} className="flex items-start gap-3 px-4 py-2.5">
-                    <span className="text-sm font-semibold text-[--color-text-subtle]">
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <TaskLink task={task} />
-                      <p className="mt-0.5 text-xs text-[--color-text-muted]">
-                        {task.project?.name}
-                        {factors.length > 0 && ` · ${factors.join(', ')}`}
-                      </p>
-                    </div>
-                    <PriorityBadge priority={task.priority} />
-                  </li>
-                ))}
-              </ol>
-            )}
-          </Card>
-
-          <TaskCard
-            title="Overdue"
-            icon={<AlertOctagon className="size-4 text-[--color-overdue]" />}
-            tasks={d.overdueTasks}
-            emptyTitle="Nothing overdue"
-          />
-
-          <TaskCard
-            title="Due today & soon"
-            icon={<CalendarClock className="size-4 text-[--color-attention]" />}
-            tasks={d.dueSoonTasks}
-            emptyTitle="Nothing due in the next few days"
-          />
-
-          <TaskCard
-            title="High & urgent"
-            icon={<Flame className="size-4 text-[--color-attention]" />}
-            tasks={d.highPriorityTasks}
-            emptyTitle="No high-priority work queued"
-          />
-
-          <ProjectCard
-            title="Stale projects"
-            projects={d.staleProjects}
-            emptyTitle="No stale projects"
-            emptyDesc="Everything's had activity recently."
-          />
-
-          <ProjectCard
-            title="Needs attention"
-            projects={d.attentionProjects}
-            emptyTitle="No projects need attention"
-          />
-
-          <TaskCard
-            title="In progress"
-            tasks={d.inProgressTasks}
-            emptyTitle="Nothing in progress"
-          />
-
-          <Card className="lg:col-span-2">
-            <CardHeader title="Recent activity" />
-            <ActivityTimeline items={activity.data} loading={activity.isLoading} />
-          </Card>
-        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{order.map(renderCard)}</div>
       )}
     </Page>
   )

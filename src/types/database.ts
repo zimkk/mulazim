@@ -11,6 +11,8 @@ export type Priority = 'low' | 'medium' | 'high' | 'urgent'
 
 export type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'done' | 'cancelled'
 
+export type Recurrence = 'none' | 'daily' | 'weekdays' | 'weekly' | 'biweekly' | 'monthly'
+
 export type ActivityType =
   | 'task_created'
   | 'task_completed'
@@ -38,6 +40,7 @@ export interface Client {
   email: string | null
   notes: string | null
   status: ClientStatus
+  deleted_at: string | null
   created_at: string
   updated_at: string
 }
@@ -53,6 +56,12 @@ export interface Project {
   priority: Priority
   deadline: string | null
   last_activity_at: string
+  review_interval_days: number | null
+  last_reviewed_at: string | null
+  pinned: boolean
+  color: string | null
+  sort_order: number
+  deleted_at: string | null
   created_at: string
   updated_at: string
 }
@@ -66,11 +75,35 @@ export interface Task {
   status: TaskStatus
   priority: Priority
   due_date: string | null
+  start_date: string | null
   completed_at: string | null
   estimated_minutes: number | null
   actual_minutes: number | null
+  sort_order: number
+  recurrence: Recurrence
+  recurrence_until: string | null
+  deleted_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface Subtask {
+  id: string
+  user_id: string
+  task_id: string
+  title: string
+  done: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Tag {
+  id: string
+  user_id: string
+  name: string
+  color: string
+  created_at: string
 }
 
 export interface ActivityLog {
@@ -95,6 +128,7 @@ export interface ProjectWithStats extends Project {
 
 export interface TaskWithProject extends Task {
   project: Pick<Project, 'id' | 'name' | 'type' | 'status'> | null
+  tags?: Tag[]
 }
 
 export interface ClientWithStats extends Client {

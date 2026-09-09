@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { qk } from '@/lib/queryKeys'
 import { logActivity } from '@/lib/utils/activity'
+import { nextOccurrence } from '@/lib/utils/recurrence'
 import { useAuthStore } from '@/stores/authStore'
-import type { Priority, Task, TaskStatus, TaskWithProject } from '@/types/database'
+import type { Priority, Recurrence, Task, TaskStatus, TaskWithProject } from '@/types/database'
 
 export interface TaskInput {
   title: string
@@ -12,7 +13,10 @@ export interface TaskInput {
   status?: TaskStatus
   priority?: Priority
   due_date?: string | null
+  start_date?: string | null
   estimated_minutes?: number | null
+  recurrence?: Recurrence
+  recurrence_until?: string | null
 }
 
 const PROJECT_SELECT = '*, project:projects(id, name, type, status)'
@@ -26,6 +30,8 @@ export function useTasksByProject(projectId: string | undefined) {
         .from('tasks')
         .select(PROJECT_SELECT)
         .eq('project_id', projectId!)
+        .is('deleted_at', null)
+        .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true })
       if (error) throw error
       return (data ?? []) as unknown as TaskWithProject[]
@@ -40,6 +46,7 @@ export function useAllOpenTasks() {
       const { data, error } = await supabase
         .from('tasks')
         .select(PROJECT_SELECT)
+        .is('deleted_at', null)
         .not('status', 'in', '(done,cancelled)')
         .order('due_date', { ascending: true, nullsFirst: false })
       if (error) throw error
@@ -104,6 +111,30 @@ export function useUpdateTask() {
         .single()
       if (error) throw error
 
+      // Recurring task completed → materialise the next occurrence.
+      if (input.status === 'done' && previousStatus !== 'done' && data.recurrence !== 'none') {
+        const anchor = data.due_date ?? data.start_date ?? new Date().toISOString().slice(0, 10)
+        const nextDue = nextOccurrence(anchor, data.recurrence, data.recurrence_until)
+        if (nextDue) {
+          const shift = data.start_date && data.due_date
+            ? nextOccurrence(data.start_date, data.recurrence, data.recurrence_until)
+            : null
+          await supabase.from('tasks').insert({
+            user_id: data.user_id,
+            project_id: data.project_id,
+            title: data.title,
+            description: data.description,
+            priority: data.priority,
+            status: 'todo',
+            due_date: data.due_date ? nextDue : null,
+            start_date: data.start_date ? (shift ?? nextDue) : null,
+            estimated_minutes: data.estimated_minutes,
+            recurrence: data.recurrence,
+            recurrence_until: data.recurrence_until,
+          })
+        }
+      }
+
       if (userId && input.status && input.status !== previousStatus) {
         const type =
           input.status === 'done'
@@ -136,14 +167,39 @@ export function useUpdateTask() {
   })
 }
 
+/** Soft delete — recoverable from Trash. */
 export function useDeleteTask() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ id }: { id: string; projectId: string }): Promise<void> => {
-      const { error } = await supabase.from('tasks').delete().eq('id', id)
+      const { error } = await supabase
+        .from('tasks')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id)
       if (error) throw error
     },
     onSuccess: (_data, vars) => invalidate(qc, vars.projectId),
+  })
+}
+
+export function useReorderTasks() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      updates,
+    }: {
+      projectId: string
+      updates: { id: string; sort_order: number }[]
+    }): Promise<void> => {
+      for (const u of updates) {
+        const { error } = await supabase
+          .from('tasks')
+          .update({ sort_order: u.sort_order })
+          .eq('id', u.id)
+        if (error) throw error
+      }
+    },
+    onSuccess: (_d, vars) => invalidate(qc, vars.projectId),
   })
 }
 

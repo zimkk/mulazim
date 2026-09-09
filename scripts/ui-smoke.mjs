@@ -44,8 +44,18 @@ const consoleErrors = []
 page.on('console', (m) => m.type() === 'error' && consoleErrors.push(m.text()))
 page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${e.message}`))
 page.on('requestfailed', (r) => consoleErrors.push(`reqfail ${r.failure()?.errorText} ${r.url()}`))
-page.on('response', (r) => {
-  if (r.status() >= 400) consoleErrors.push(`HTTP ${r.status()} ${r.request().method()} ${r.url()}`)
+page.on('response', async (r) => {
+  if (r.status() < 400) return
+  let body = ''
+  try {
+    body = (await r.text()).slice(0, 300)
+  } catch {
+    /* ignore */
+  }
+  const auth = r.request().headers()['authorization']
+  consoleErrors.push(
+    `HTTP ${r.status()} ${r.request().method()} ${r.url()}\n    auth=${auth ? auth.slice(0, 24) + '…' : 'NONE'}\n    body=${body}`,
+  )
 })
 
 const shot = (name) => page.screenshot({ path: `${ARTIFACTS}${name}.png` })
@@ -137,17 +147,24 @@ try {
   await clickText('button', 'First task from UI')
   await byText('h2', 'Edit task')
   const selects = await page.$$('#task-form select')
-  await selects[1].select('urgent') // Priority is the 2nd select (Status, Priority, ...)
+  await selects[1].select('urgent') // Status, Priority, Repeat -> [1] is Priority
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
-  await setNativeValue('#task-form input[type="date"]', yesterday)
+  // date inputs order: [0] Start date, [1] Due date
+  const dueInputs0 = await page.$$('#task-form input[type="date"]')
+  await dueInputs0[1].evaluate((el, v) => {
+    const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value').set
+    setter.call(el, v)
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+    el.dispatchEvent(new Event('change', { bubbles: true }))
+  }, yesterday)
   await clickText('button[form="task-form"]', 'Save')
   await page.waitForFunction(() => !document.querySelector('#task-form'), { timeout: 10000 })
-  // due_date must round-trip: reopen and read the date input back.
+  // due_date must round-trip: reopen and read it back.
   await clickText('button', 'First task from UI')
   await byText('h2', 'Edit task')
-  const savedDate = await page.$eval('#task-form input[type="date"]', (el) => el.value)
-  ok('task due_date persisted through edit', savedDate === yesterday, `got "${savedDate}"`)
-  await clickText('button[form="task-form"]', 'Cancel').catch(() => clickText('button', 'Cancel'))
+  const dateInputs = await page.$$eval('#task-form input[type="date"]', (els) => els.map((e) => e.value))
+  ok('task due_date persisted through edit', dateInputs[1] === yesterday, `got "${dateInputs[1]}"`)
+  await page.keyboard.press('Escape')
   await page.waitForFunction(() => !document.querySelector('#task-form'), { timeout: 10000 })
   await shot('04-task-added')
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Archive, Pencil, Plus } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, Archive, CheckCircle2, Pencil, Pin, Plus, Trash2 } from 'lucide-react'
 import { Page } from '@/components/layout/AppShell'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -13,26 +13,36 @@ import { TaskFormModal } from '@/components/tasks/TaskFormModal'
 import { QuickAddTask } from '@/components/tasks/QuickAddTask'
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline'
 import { ProjectFormModal } from '@/components/projects/ProjectFormModal'
-import { useArchiveProject, useProject } from '@/lib/api/projects'
+import {
+  useArchiveProject,
+  useDeleteProject,
+  useProject,
+  useSetProjectFields,
+} from '@/lib/api/projects'
 import { useTasksByProject } from '@/lib/api/tasks'
 import { useAddNote, useProjectActivity } from '@/lib/api/activity'
 import { useUiStore } from '@/stores/uiStore'
-import { useStaleThresholds } from '@/lib/api/settings'
+import { useSettings, useStaleThresholds } from '@/lib/api/settings'
+import { confirmDialog } from '@/lib/confirm'
 import { projectHealth } from '@/lib/utils/health'
-import { dueLabel, relativeTime } from '@/lib/utils/dates'
+import { daysSince, dueLabel, relativeTime } from '@/lib/utils/dates'
 import { PROJECT_STATUS_LABEL } from '@/lib/constants'
 import type { Task } from '@/types/database'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { notify } = useToast()
   const setLastProjectId = useUiStore((s) => s.setLastProjectId)
   const thresholds = useStaleThresholds()
+  const { general } = useSettings()
 
   const project = useProject(id)
   const tasks = useTasksByProject(id)
   const activity = useProjectActivity(id)
   const archive = useArchiveProject()
+  const del = useDeleteProject()
+  const setFields = useSetProjectFields()
   const addNote = useAddNote()
 
   const [editing, setEditing] = useState(false)
@@ -67,6 +77,20 @@ export default function ProjectDetail() {
     await archive.mutateAsync(p.id)
     notify('Project archived', 'success')
   }
+
+  async function onDelete() {
+    if (general.confirmBeforeDelete) {
+      const yes = await confirmDialog(`Move "${p.name}" and its tasks to Trash?`)
+      if (!yes) return
+    }
+    await del.mutateAsync(p.id)
+    notify('Project moved to trash', 'success')
+    navigate('/projects')
+  }
+
+  const reviewDue =
+    p.review_interval_days != null &&
+    daysSince(p.last_reviewed_at ?? p.created_at) >= p.review_interval_days
 
   async function onAddNote() {
     if (!note.trim()) return
@@ -106,7 +130,24 @@ export default function ProjectDetail() {
             <p className="mt-1.5 text-xs text-[--color-text-muted]">{health.reasons.join(' · ')}</p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            icon={<Pin className={p.pinned ? 'size-3.5 fill-current' : 'size-3.5'} />}
+            onClick={() => setFields.mutate({ id: p.id, pinned: !p.pinned })}
+          >
+            {p.pinned ? 'Pinned' : 'Pin'}
+          </Button>
+          {p.review_interval_days != null && (
+            <Button
+              icon={<CheckCircle2 className="size-3.5" />}
+              onClick={() => {
+                setFields.mutate({ id: p.id, last_reviewed_at: new Date().toISOString() })
+                notify('Marked reviewed', 'success')
+              }}
+            >
+              {reviewDue ? 'Review now' : 'Reviewed'}
+            </Button>
+          )}
           <Button icon={<Pencil className="size-3.5" />} onClick={() => setEditing(true)}>
             Edit
           </Button>
@@ -117,6 +158,9 @@ export default function ProjectDetail() {
             disabled={p.status === 'archived'}
           >
             Archive
+          </Button>
+          <Button variant="danger" icon={<Trash2 className="size-3.5" />} onClick={onDelete} loading={del.isPending}>
+            Delete
           </Button>
         </div>
       </div>

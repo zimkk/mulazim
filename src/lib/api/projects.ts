@@ -20,6 +20,7 @@ export interface ProjectInput {
   priority: Priority
   deadline?: string | null
   client_id?: string | null
+  review_interval_days?: number | null
 }
 
 interface TaskAggRow {
@@ -61,16 +62,18 @@ function buildStats(
 async function fetchProjectsWithStats(filter?: {
   clientId?: string
 }): Promise<ProjectWithStats[]> {
-  let projectQuery = supabase.from('projects').select('*').order('last_activity_at', {
-    ascending: false,
-  })
+  let projectQuery = supabase
+    .from('projects')
+    .select('*')
+    .is('deleted_at', null)
+    .order('last_activity_at', { ascending: false })
   if (filter?.clientId) projectQuery = projectQuery.eq('client_id', filter.clientId)
 
   const [{ data: projects, error }, { data: clients, error: cErr }, { data: tasks, error: tErr }] =
     await Promise.all([
       projectQuery,
-      supabase.from('clients').select('id, name, company_name'),
-      supabase.from('tasks').select('project_id, status, due_date'),
+      supabase.from('clients').select('id, name, company_name').is('deleted_at', null),
+      supabase.from('tasks').select('project_id, status, due_date').is('deleted_at', null),
     ])
   if (error) throw error
   if (cErr) throw cErr
@@ -169,6 +172,40 @@ export function useArchiveProject() {
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       const { error } = await supabase.from('projects').update({ status: 'archived' }).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => invalidateAll(qc),
+  })
+}
+
+export function useSetProjectFields() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...fields
+    }: { id: string } & Partial<
+      Pick<
+        import('@/types/database').Project,
+        'pinned' | 'color' | 'sort_order' | 'review_interval_days' | 'last_reviewed_at'
+      >
+    >): Promise<void> => {
+      const { error } = await supabase.from('projects').update(fields).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => invalidateAll(qc),
+  })
+}
+
+/** Soft delete — moves to Trash (restorable). */
+export function useDeleteProject() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      const { error } = await supabase
+        .from('projects')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id)
       if (error) throw error
     },
     onSuccess: () => invalidateAll(qc),

@@ -19,6 +19,7 @@ export function useClients() {
       const { data: clients, error } = await supabase
         .from('clients')
         .select('*')
+        .is('deleted_at', null)
         .order('name', { ascending: true })
       if (error) throw error
 
@@ -26,11 +27,13 @@ export function useClients() {
       const { data: projects, error: pErr } = await supabase
         .from('projects')
         .select('id, client_id, status, last_activity_at')
+        .is('deleted_at', null)
       if (pErr) throw pErr
 
       const { data: openTasks, error: tErr } = await supabase
         .from('tasks')
         .select('id, project_id, status')
+        .is('deleted_at', null)
         .not('status', 'in', '(done,cancelled)')
       if (tErr) throw tErr
 
@@ -122,6 +125,23 @@ export function useArchiveClient() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.clients })
+    },
+  })
+}
+
+export function useDeleteClient() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      const { error } = await supabase
+        .from('clients')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.clients })
+      void qc.invalidateQueries({ queryKey: qk.projects })
     },
   })
 }
