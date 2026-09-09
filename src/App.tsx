@@ -2,8 +2,9 @@ import { lazy, useEffect } from 'react'
 import { createHashRouter, RouterProvider } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { RequireAuth } from '@/components/RequireAuth'
+import { SettingsPersister, useSettingsQuery } from '@/lib/api/settings'
+import { applyAppearance, cacheAppearance } from '@/lib/appearance'
 import { useAuthStore } from '@/stores/authStore'
-import { applyTheme, useUiStore } from '@/stores/uiStore'
 
 const Login = lazy(() => import('@/pages/Login'))
 const Setup = lazy(() => import('@/pages/Setup'))
@@ -33,25 +34,39 @@ const router = createHashRouter([
       { path: 'clients/:id', element: <ClientDetail /> },
       { path: 'activity', element: <ActivityPage /> },
       { path: 'settings', element: <Settings /> },
+      { path: 'settings/:section', element: <Settings /> },
     ],
   },
 ])
 
+/** Keeps <html> in sync with the user's appearance settings.
+ *  Until the synced settings have loaded, the boot cache (main.tsx) stands — no flash. */
+function AppearanceSync() {
+  const { data, isSuccess } = useSettingsQuery()
+  useEffect(() => {
+    if (!isSuccess || !data) return
+    applyAppearance(data.appearance)
+    cacheAppearance(data.appearance)
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = () => applyAppearance(data.appearance)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [data, isSuccess])
+  return null
+}
+
 export function App() {
   const init = useAuthStore((s) => s.init)
-  const theme = useUiStore((s) => s.theme)
 
   useEffect(() => {
     void init()
   }, [init])
 
-  useEffect(() => {
-    applyTheme(theme)
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = () => applyTheme(theme)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [theme])
-
-  return <RouterProvider router={router} />
+  return (
+    <>
+      <AppearanceSync />
+      <SettingsPersister />
+      <RouterProvider router={router} />
+    </>
+  )
 }

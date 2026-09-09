@@ -17,6 +17,7 @@ import { useArchiveProject, useProject } from '@/lib/api/projects'
 import { useTasksByProject } from '@/lib/api/tasks'
 import { useAddNote, useProjectActivity } from '@/lib/api/activity'
 import { useUiStore } from '@/stores/uiStore'
+import { useStaleThresholds } from '@/lib/api/settings'
 import { projectHealth } from '@/lib/utils/health'
 import { dueLabel, relativeTime } from '@/lib/utils/dates'
 import { PROJECT_STATUS_LABEL } from '@/lib/constants'
@@ -26,7 +27,7 @@ export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const { notify } = useToast()
   const setLastProjectId = useUiStore((s) => s.setLastProjectId)
-  const thresholds = useUiStore((s) => s.staleThresholds)
+  const thresholds = useStaleThresholds()
 
   const project = useProject(id)
   const tasks = useTasksByProject(id)

@@ -39,11 +39,20 @@
       "icons/icon.ico"
     ],
     "publisher": "Grid Manager",
+    "category": "Productivity",
     "shortDescription": "Personal project & task command center",
     "longDescription": "A personal, cloud-first desktop tracker for freelance clients, projects and tasks. Keeps every active piece of work visible so nothing gets neglected.",
     "windows": {
       "nsis": {
         "installMode": "currentUser"
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]
       }
     }
   },

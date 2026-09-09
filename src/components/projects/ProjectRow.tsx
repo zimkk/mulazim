@@ -3,11 +3,11 @@ import { CalendarClock, CircleDot } from 'lucide-react'
 import { Badge, HealthBadge, PriorityBadge } from '@/components/ui/Badge'
 import { projectHealth } from '@/lib/utils/health'
 import { dueLabel, relativeTime } from '@/lib/utils/dates'
-import { useUiStore } from '@/stores/uiStore'
+import { useStaleThresholds } from '@/lib/api/settings'
 import type { ProjectWithStats } from '@/types/database'
 
 export function ProjectRow({ project }: { project: ProjectWithStats }) {
-  const thresholds = useUiStore((s) => s.staleThresholds)
+  const thresholds = useStaleThresholds()
   const health = projectHealth(project, thresholds)
 
   return (

@@ -10,7 +10,7 @@ import { useDashboard } from '@/lib/api/dashboard'
 import { useRecentActivity } from '@/lib/api/activity'
 import { displayNameOf, useProfile } from '@/lib/api/profile'
 import { useAuthStore } from '@/stores/authStore'
-import { useUiStore } from '@/stores/uiStore'
+import { useStaleThresholds } from '@/lib/api/settings'
 import { projectHealth } from '@/lib/utils/health'
 import { dueLabel, greeting, relativeTime } from '@/lib/utils/dates'
 import type { ProjectWithStats, TaskWithProject } from '@/types/database'
@@ -185,7 +185,7 @@ function ProjectCard({
   emptyTitle: string
   emptyDesc?: string
 }) {
-  const thresholds = useUiStore((s) => s.staleThresholds)
+  const thresholds = useStaleThresholds()
   return (
     <Card>
       <CardHeader title={title} count={projects.length} />

@@ -3,11 +3,13 @@ import { CommandPalette } from '@/components/CommandPalette'
 import { ProjectFormModal } from '@/components/projects/ProjectFormModal'
 import { QuickAddTask } from '@/components/tasks/QuickAddTask'
 import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys'
+import { useMenuBridge } from '@/hooks/useMenuBridge'
 import { useUiStore } from '@/stores/uiStore'
 
 /** Hosts the app-level overlays driven by uiStore.overlay + the global hotkeys. */
 export function GlobalOverlays() {
   useGlobalHotkeys()
+  useMenuBridge()
   const overlay = useUiStore((s) => s.overlay)
   const setOverlay = useUiStore((s) => s.setOverlay)
   const close = () => setOverlay('none')

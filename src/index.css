@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Dark mode is driven by a `.dark` class on <html>, toggled from the UI store. */
+/* Dark mode is a `.dark` class on <html> (see src/lib/appearance.ts). */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
@@ -8,7 +8,7 @@
     sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
 
-  /* Neutral scale (slate-ish) */
+  /* Neutral scale */
   --color-bg: #f7f8fa;
   --color-surface: #ffffff;
   --color-surface-2: #f1f3f5;
@@ -17,7 +17,7 @@
   --color-text-muted: #6b7280;
   --color-text-subtle: #9aa1ab;
 
-  /* Accent */
+  /* Accent (default = blue; overridden per [data-accent]) */
   --color-accent: #2563eb;
   --color-accent-hover: #1d4ed8;
   --color-accent-fg: #ffffff;
@@ -31,13 +31,11 @@
   --color-info: #0891b2;
 }
 
-/* Dark theme token overrides */
 .dark {
   --color-bg: #0f1115;
   --color-surface: #171a21;
   --color-surface-2: #1f232c;
   --color-border: #2a2f3a;
-  --color-text: #e6e8 eb;
   --color-text: #e6e8eb;
   --color-text-muted: #9aa1ab;
   --color-text-subtle: #6b7280;
@@ -54,7 +52,34 @@
   --color-info: #22d3ee;
 }
 
-html,
+/* ---------- Accent presets ---------- */
+:root[data-accent='violet'] { --color-accent: #7c3aed; --color-accent-hover: #6d28d9; --color-accent-fg: #ffffff; }
+:root[data-accent='green']  { --color-accent: #059669; --color-accent-hover: #047857; --color-accent-fg: #ffffff; }
+:root[data-accent='amber']  { --color-accent: #d97706; --color-accent-hover: #b45309; --color-accent-fg: #ffffff; }
+:root[data-accent='rose']   { --color-accent: #e11d48; --color-accent-hover: #be123c; --color-accent-fg: #ffffff; }
+:root[data-accent='slate']  { --color-accent: #475569; --color-accent-hover: #334155; --color-accent-fg: #ffffff; }
+
+.dark[data-accent='violet'] { --color-accent: #a78bfa; --color-accent-hover: #c4b5fd; --color-accent-fg: #1a1030; }
+.dark[data-accent='green']  { --color-accent: #34d399; --color-accent-hover: #6ee7b7; --color-accent-fg: #05231a; }
+.dark[data-accent='amber']  { --color-accent: #fbbf24; --color-accent-hover: #fcd34d; --color-accent-fg: #2a1c05; }
+.dark[data-accent='rose']   { --color-accent: #fb7185; --color-accent-hover: #fda4af; --color-accent-fg: #2c0a13; }
+.dark[data-accent='slate']  { --color-accent: #94a3b8; --color-accent-hover: #cbd5e1; --color-accent-fg: #0b1220; }
+
+/* ---------- Density + font size (scale the whole rem-based UI) ---------- */
+:root {
+  --fs-base: 16px;
+  --density-mult: 1;
+}
+:root[data-font-size='sm'] { --fs-base: 15px; }
+:root[data-font-size='md'] { --fs-base: 16px; }
+:root[data-font-size='lg'] { --fs-base: 17.5px; }
+:root[data-density='compact'] { --density-mult: 0.9; }
+
+html {
+  height: 100%;
+  font-size: calc(var(--fs-base) * var(--density-mult));
+}
+
 body,
 #root {
   height: 100%;
@@ -65,24 +90,37 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 0.875rem; /* scales with html */
   -webkit-font-smoothing: antialiased;
   overflow: hidden; /* desktop shell — panels scroll, not the window */
 }
 
-/* Let the OS drag the window from elements marked data-tauri-drag-region */
+/* ---------- Reduced motion ---------- */
+:root[data-reduce-motion='true'] *,
+:root[data-reduce-motion='true'] *::before,
+:root[data-reduce-motion='true'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 [data-tauri-drag-region] {
   app-region: drag;
 }
 
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 9999px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Consistent focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }

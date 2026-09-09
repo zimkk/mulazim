@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useUiStore } from '@/stores/uiStore'
+import { useStaleThresholds } from '@/lib/api/settings'
 import { daysUntil, isOverdue } from '@/lib/utils/dates'
 import { projectHealth } from '@/lib/utils/health'
 import { staleLevel } from '@/lib/utils/staleness'
@@ -23,7 +23,7 @@ export interface DashboardData {
 }
 
 export function useDashboard(): DashboardData {
-  const thresholds = useUiStore((s) => s.staleThresholds)
+  const thresholds = useStaleThresholds()
   const projectsQuery = useProjects()
   const tasksQuery = useAllOpenTasks()
 

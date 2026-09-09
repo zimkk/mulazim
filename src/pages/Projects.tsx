@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils/cn'
 import { ProjectRow } from '@/components/projects/ProjectRow'
 import { ProjectFormModal } from '@/components/projects/ProjectFormModal'
 import { useProjects } from '@/lib/api/projects'
-import { useUiStore } from '@/stores/uiStore'
+import { useStaleThresholds } from '@/lib/api/settings'
 import { projectHealth } from '@/lib/utils/health'
 import { isStale } from '@/lib/utils/staleness'
 import {
@@ -20,7 +20,7 @@ import {
 
 export default function Projects() {
   const { data, isLoading, isError, refetch } = useProjects()
-  const thresholds = useUiStore((s) => s.staleThresholds)
+  const thresholds = useStaleThresholds()
   const [filter, setFilter] = useState<ProjectFilter>('active')
   const [q, setQ] = useState('')
   const [creating, setCreating] = useState(false)

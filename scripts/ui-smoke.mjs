@@ -43,6 +43,10 @@ await page.setViewport({ width: 1400, height: 900 })
 const consoleErrors = []
 page.on('console', (m) => m.type() === 'error' && consoleErrors.push(m.text()))
 page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${e.message}`))
+page.on('requestfailed', (r) => consoleErrors.push(`reqfail ${r.failure()?.errorText} ${r.url()}`))
+page.on('response', (r) => {
+  if (r.status() >= 400) consoleErrors.push(`HTTP ${r.status()} ${r.request().method()} ${r.url()}`)
+})
 
 const shot = (name) => page.screenshot({ path: `${ARTIFACTS}${name}.png` })
 const byText = async (sel, text) => {
@@ -209,23 +213,52 @@ try {
   await byText('h1', 'Northwind Ltd')
   ok('palette navigates to a matched client', true)
 
-  // --- Settings: theme toggle ---
+  // --- Settings: categorized panel + theme + accent ---
   await clickText('a', 'Settings')
   await byText('h1', 'Settings')
-  const darkBefore = await page.evaluate(() => document.documentElement.classList.contains('dark'))
-  await page.select('select', 'light')
-  await page.waitForFunction(() => !document.documentElement.classList.contains('dark'), { timeout: 5000 })
-  const lightNow = await page.evaluate(() => !document.documentElement.classList.contains('dark'))
-  ok('theme toggle switches <html> class', darkBefore && lightNow)
-  await page.select('select', 'dark')
+  await byText('nav a, a', 'Appearance')
+  ok('settings has a categorized left nav', true)
+  await clickText('a', 'Appearance')
+  await byText('h2', 'Appearance')
+
+  // Theme segmented control
+  await clickText('button', 'Light')
+  await page.waitForFunction(() => !document.documentElement.classList.contains('dark'), { timeout: 6000 })
+  ok('theme control flips <html>.dark off', true)
+  await clickText('button', 'Dark')
+  await page.waitForFunction(() => document.documentElement.classList.contains('dark'), { timeout: 6000 })
+  ok('theme control flips <html>.dark on', true)
+
+  // Accent colour writes data-accent
+  const accentBtns = await page.$$('button[aria-label="violet"]')
+  if (accentBtns[0]) await accentBtns[0].click()
+  await page.waitForFunction(() => document.documentElement.dataset.accent === 'violet', { timeout: 6000 })
+  ok('accent colour applies to <html data-accent>', true)
+
+  // Density writes data-density
+  await clickText('button', 'Compact')
+  await page.waitForFunction(() => document.documentElement.dataset.density === 'compact', { timeout: 6000 })
+  ok('density applies to <html data-density>', true)
+
+  // A setting persists across reload (it is synced, not just local)
+  await clickText('a', 'Workflow')
+  await byText('h2', 'Dashboard cards')
+  ok('settings sections render (Workflow)', true)
   await shot('06-settings')
 
-  // --- Reload keeps the session (persisted auth) ---
+  // --- Reload keeps the session + restores synced appearance ---
+  await new Promise((r) => setTimeout(r, 900)) // let the settings persist debounce flush
   await page.reload({ waitUntil: 'networkidle2' })
   await page.waitForSelector('#root *', { timeout: 15000 })
-  await byText('h1', 'Settings') // hash route survives; still authenticated (not bounced to /login)
   const bouncedToLogin = await page.evaluate(() => location.hash.includes('login'))
   ok('session persists across reload', !bouncedToLogin)
+  await page.waitForFunction(
+    () =>
+      document.documentElement.dataset.accent === 'violet' &&
+      document.documentElement.dataset.density === 'compact',
+    { timeout: 8000 },
+  )
+  ok('synced appearance settings survive a reload', true)
 
   ok('no console/page errors during flow', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '))
 
@@ -245,6 +278,7 @@ try {
 } catch (e) {
   fail++
   console.error('\nFATAL', e.message)
+  if (consoleErrors.length) console.error('network/console:\n  ' + consoleErrors.join('\n  '))
   await shot('99-failure')
 } finally {
   await browser.close()
