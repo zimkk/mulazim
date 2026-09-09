@@ -50,9 +50,9 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/YOUR_GH_USER/grid-manager/releases/latest/download/latest.json"
+        "https://github.com/zimkk/mulazim/releases/latest/download/latest.json"
       ],
-      "pubkey": "REPLACE_WITH_TAURI_SIGNING_PUBLIC_KEY"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk4QTY1QTY5MzE5RTEwMjkKUldRcEVKNHhhVnFtbU9WWS9MaTJ6eXJoNGJHUWV4K0JRa2gySU43b3R0UENtNU9sWTdtek9jSGYK"
     }
   }
 }

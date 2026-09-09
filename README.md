@@ -53,30 +53,26 @@ npm run tauri dev    # full desktop app
 npm run typecheck
 npm run lint
 npm run build
+npm run test:e2e   # API round-trip vs the live Supabase project (reads .env)
+npm run test:ui    # headless-Chromium walk-through of the built app
 ```
+
+`test:ui` needs a server running (`npm run build && npm run preview -- --port 4173`)
+and Chrome/Chromium at `/usr/bin/chromium` (override with `CHROME=`). Set
+`SUPABASE_SERVICE_ROLE_KEY` in the env to auto-delete the throwaway test users.
 
 ## Releasing (automatic updates)
 
-The update system is tag-driven (`ARCHITECTURE.md` §33–§39).
+Tag-driven (`ARCHITECTURE.md` §33–§39). The signing key is already generated
+(`.secrets/`) and its public half is wired into `tauri.conf.json`. Full steps —
+including the exact GitHub Actions secret names and values — are in
+[`RELEASE.md`](./RELEASE.md). Short version:
 
-1. **One-time:** generate an updater signing key
-   ```bash
-   npm run tauri signer generate -- -w ~/.tauri/grid-manager.key
-   ```
-   - Put the **public** key in `src-tauri/tauri.conf.json` → `plugins.updater.pubkey`.
-   - Update `plugins.updater.endpoints` with your GitHub repo path.
-   - Add GitHub Actions secrets: `TAURI_SIGNING_PRIVATE_KEY`,
-     `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, `VITE_SUPABASE_URL`,
-     `VITE_SUPABASE_ANON_KEY`.
-2. **Each release:** bump the version in `package.json` **and**
-   `src-tauri/tauri.conf.json` (keep them in sync), commit, then:
-   ```bash
-   git tag v0.2.0
-   git push origin v0.2.0
-   ```
-3. GitHub Actions (`.github/workflows/release.yml`) builds, signs, generates
-   `latest.json`, and publishes a GitHub Release. Installed apps detect it on
-   next launch and offer a one-click update.
+```bash
+# once: set the 4 Actions secrets (see RELEASE.md)
+# per release: bump version in package.json AND src-tauri/tauri.conf.json, then
+git tag v0.2.0 && git push origin main v0.2.0
+```
 
 ## Project layout
 

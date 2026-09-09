@@ -176,6 +176,41 @@ try {
   ok('overdue shows a day count', /Overdue by \d+d/.test(overdueCopy), overdueCopy)
   await shot('05-dashboard-populated')
 
+  // --- Clients ---
+  await clickText('a', 'Clients')
+  await byText('h1', 'Clients')
+  await clickText('button', 'New client')
+  await byText('h2', 'New client')
+  await page.type('#client-form input', 'Northwind Ltd')
+  await clickText('button[form="client-form"]', 'Create')
+  await page.waitForFunction(() => !document.querySelector('#client-form'), { timeout: 10000 })
+  await byText('a, span', 'Northwind Ltd')
+  ok('client created and listed', true)
+
+  // --- Activity page ---
+  await clickText('a', 'Activity')
+  await byText('h1', 'Activity')
+  await page.waitForFunction(() => document.body.innerText.includes('Created project'), { timeout: 10000 })
+  ok('activity page shows logged events', true)
+
+  // --- Settings: theme toggle ---
+  await clickText('a', 'Settings')
+  await byText('h1', 'Settings')
+  const darkBefore = await page.evaluate(() => document.documentElement.classList.contains('dark'))
+  await page.select('select', 'light')
+  await page.waitForFunction(() => !document.documentElement.classList.contains('dark'), { timeout: 5000 })
+  const lightNow = await page.evaluate(() => !document.documentElement.classList.contains('dark'))
+  ok('theme toggle switches <html> class', darkBefore && lightNow)
+  await page.select('select', 'dark')
+  await shot('06-settings')
+
+  // --- Reload keeps the session (persisted auth) ---
+  await page.reload({ waitUntil: 'networkidle2' })
+  await page.waitForSelector('#root *', { timeout: 15000 })
+  await byText('h1', 'Settings') // hash route survives; still authenticated (not bounced to /login)
+  const bouncedToLogin = await page.evaluate(() => location.hash.includes('login'))
+  ok('session persists across reload', !bouncedToLogin)
+
   ok('no console/page errors during flow', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '))
 
   // Cleanup the auth user (best effort)

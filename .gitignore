@@ -31,3 +31,6 @@ src-tauri/target/
 src-tauri/gen/
 *.tsbuildinfo
 .artifacts/
+
+# Signing keys — never commit
+.secrets/
