@@ -140,7 +140,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] `npm run typecheck` clean
 - [x] `npm run lint` (oxlint) — no errors, 4 style warnings
 - [x] `npm run build` (frontend) succeeds
-- [ ] `npm run tauri dev` smoke test — blocked on Linux system libs
+- [x] `cargo check` + `npm run tauri build` succeed on Linux; produces `target/release/app` (21 MB) and `Grid Manager_0.1.0_amd64.deb`. The built binary launches with its webview (headless Xvfb can't screenshot WebKitGTK, but the process starts clean with no errors).
 - [x] Migrations applied to the live Supabase project `mulazim` (ztmedzpbvsabzfjpyzll) via `supabase db push`; all 6 migrations, all 5 tables reachable
 - [x] `npm run test:e2e` — 19 checks vs live Supabase: auth, profile trigger, CRUD, last_activity_at + updated_at triggers, joined reads, RLS read+write isolation, cascade delete
 - [x] `npm run test:ui` — 18 checks, headless Chromium vs the built app + live backend: sign up → dashboard → project → task → due-date edit → Overdue/queue surfacing → clients → activity → theme toggle → session persists on reload → zero console errors
@@ -157,16 +157,17 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 ---
 
 ## Remaining before this is "done"
-Everything that can be done without a GitHub API token or `sudo` on this machine is done and verified.
+The whole app — frontend, database, auth, activity, dashboard, keyboard UX,
+desktop build — is implemented and verified. One step needs a credential that
+isn't available in this environment:
 
-1. **CI secrets** — set the 4 GitHub Actions secrets from `RELEASE.md`, then push a `v0.1.0`
-   tag. That produces the signed Windows installer + `latest.json`. (Blocked here: only
-   SSH auth is available, no PAT / `gh`.)
-2. **Local desktop run (optional)** — `sudo apt install libwebkit2gtk-4.1-dev
-   libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config
-   build-essential`, then `npm run tauri dev`. Not needed for the Windows deliverable.
-3. **Optional polish** — keyboard shortcuts, offline indicator, branded app icons,
-   a dedicated "in-progress" dashboard card.
+1. **CI secrets + first tag** — set the 4 GitHub Actions secrets from `RELEASE.md`
+   (only SSH auth is available here, no PAT / `gh`), then:
+   `git tag v0.1.0 && git push origin v0.1.0`. That produces the **signed Windows
+   installer + `latest.json`** and proves the full self-update loop.
+
+Nice-to-have, not blocking: branded app icons (currently the Tauri defaults), a
+"pick today's focus" interaction on top of the recommendation queue.
 
 ## Notes / deviations from the spec
 - Data hooks live in `src/lib/api/<entity>.ts` (queries + mutations together) rather than split `queries/` + `mutations/` dirs — architecture §7 explicitly allows the structure to evolve.

@@ -45,7 +45,13 @@ your auth user id, then run it against the database.
 ```bash
 npm run dev          # frontend only, in a browser (Supabase works; no native APIs)
 npm run tauri dev    # full desktop app
+npm run tauri build  # optimized binary + installer for the current OS
 ```
+
+The Supabase project (`mulazim`, ref `ztmedzpbvsabzfjpyzll`) is already
+provisioned — all six migrations in `supabase/migrations/` are applied and
+email confirmation is off. Just create `.env` from `.env.example` with the
+project URL + anon key.
 
 ## Quality gates
 
