@@ -8,6 +8,7 @@ import { QuickAddTask } from '@/components/tasks/QuickAddTask'
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline'
 import { useDashboard } from '@/lib/api/dashboard'
 import { useRecentActivity } from '@/lib/api/activity'
+import { displayNameOf, useProfile } from '@/lib/api/profile'
 import { useAuthStore } from '@/stores/authStore'
 import { useUiStore } from '@/stores/uiStore'
 import { projectHealth } from '@/lib/utils/health'
@@ -16,6 +17,7 @@ import type { ProjectWithStats, TaskWithProject } from '@/types/database'
 
 export default function Dashboard() {
   const email = useAuthStore((s) => s.user?.email ?? '')
+  const { data: profile } = useProfile()
   const d = useDashboard()
   const activity = useRecentActivity(12)
 
@@ -30,7 +32,7 @@ export default function Dashboard() {
   return (
     <Page>
       <PageHeader
-        title={`${greeting()}${email ? `, ${email.split('@')[0]}` : ''}`}
+        title={`${greeting()}, ${displayNameOf(profile, email)}`}
         subtitle="What needs your attention right now."
       />
 

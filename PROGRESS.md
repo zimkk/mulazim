@@ -109,7 +109,10 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] `plugins.updater` — real pubkey wired, endpoint = `github.com/zimkk/mulazim/releases/latest/download/latest.json`
 - [x] `src-tauri/src/lib.rs` minimal (plugin registration only)
 - [x] Default scaffold icons in place (replace with branded set later)
-- [!] `cargo check` — blocked: needs `sudo apt install` of pkg-config + webkit2gtk (674 transitive .debs; not doable without sudo here). The real desktop artifact is produced by the Windows CI job.
+- [x] `cargo check` clean; `npm run tauri build` produces an optimized release binary
+  (`src-tauri/target/release/app`, ~2m) — the full webkit + updater/notification/
+  dialog/opener stack compiles and links on Linux. Windows installer still comes
+  from the CI job.
 
 ## Phase 13 — Updates & CI/CD
 - [x] `.github/workflows/release.yml` — tag-driven (`v*`), `tauri-action`, Windows runner, Node 22 (mac/linux commented, ready)
