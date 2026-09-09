@@ -10,7 +10,13 @@ import { useCreateTask } from '@/lib/api/tasks'
  * Fast task capture (ARCHITECTURE.md §23). When `projectId` is omitted a project
  * picker is shown — used from the Dashboard.
  */
-export function QuickAddTask({ projectId }: { projectId?: string }) {
+export function QuickAddTask({
+  projectId,
+  onCreated,
+}: {
+  projectId?: string
+  onCreated?: () => void
+}) {
   const { notify } = useToast()
   const create = useCreateTask()
   const { data: projects } = useProjects()
@@ -27,6 +33,7 @@ export function QuickAddTask({ projectId }: { projectId?: string }) {
       await create.mutateAsync({ title: title.trim(), project_id: targetProject })
       setTitle('')
       notify('Task added', 'success')
+      onCreated?.()
     } catch (err) {
       notify(err instanceof Error ? err.message : 'Failed to add task', 'error')
     }

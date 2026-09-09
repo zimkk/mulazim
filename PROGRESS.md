@@ -127,8 +127,11 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] Empty states carry a next action
 - [x] Error boundary + retry on every page
 - [x] SemVer 0.1.0 in `package.json` + `tauri.conf.json`
-- [ ] Keyboard shortcuts (Ctrl+K / Ctrl+N …) — deferred (architecture §47: not MVP-blocking)
-- [ ] Connection-state / offline indicator — deferred
+- [x] Keyboard shortcuts (§47): `⌘/Ctrl+K` command palette (jump to screen / project / client),
+  `⌘/Ctrl+N` new task, `⌘/Ctrl+⇧+P` new project, `⌘/Ctrl+/` shortcut list, `Esc` closes
+- [x] Command palette doubles as global search over projects + clients (§46)
+- [x] Connection-state banner — shows when `navigator.onLine` is false, with a Retry that refetches
+- [x] Dashboard "In progress" card (§17)
 
 ## Phase 15 — Verification
 - [x] `npm run typecheck` clean

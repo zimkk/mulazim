@@ -193,6 +193,22 @@ try {
   await page.waitForFunction(() => document.body.innerText.includes('Created project'), { timeout: 10000 })
   ok('activity page shows logged events', true)
 
+  // --- Command palette (Ctrl+K) ---
+  await page.keyboard.down('Control')
+  await page.keyboard.press('KeyK')
+  await page.keyboard.up('Control')
+  await page.waitForSelector('input[placeholder="Jump to… or type a command"]', { timeout: 5000 })
+  ok('Ctrl+K opens the command palette', true)
+  await page.type('input[placeholder="Jump to… or type a command"]', 'Northwind')
+  await page.waitForFunction(
+    () => document.querySelector('input[placeholder="Jump to… or type a command"]') &&
+      [...document.querySelectorAll('li button')].some((b) => b.textContent?.includes('Northwind')),
+    { timeout: 5000 },
+  )
+  await page.keyboard.press('Enter')
+  await byText('h1', 'Northwind Ltd')
+  ok('palette navigates to a matched client', true)
+
   // --- Settings: theme toggle ---
   await clickText('a', 'Settings')
   await byText('h1', 'Settings')

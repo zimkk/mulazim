@@ -2,19 +2,25 @@ import { Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ConnectionBanner } from '@/components/ConnectionBanner'
+import { GlobalOverlays } from '@/components/GlobalOverlays'
 import { SkeletonRows } from '@/components/ui/States'
 
 export function AppShell() {
   return (
     <div className="flex h-full w-full overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <ErrorBoundary>
-          <Suspense fallback={<div className="p-6"><SkeletonRows rows={6} /></div>}>
-            <Outlet />
-          </Suspense>
-        </ErrorBoundary>
-      </main>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <ConnectionBanner />
+        <main className="flex-1 overflow-y-auto">
+          <ErrorBoundary>
+            <Suspense fallback={<div className="p-6"><SkeletonRows rows={6} /></div>}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
+        </main>
+      </div>
+      <GlobalOverlays />
     </div>
   )
 }
