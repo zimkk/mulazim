@@ -6,7 +6,8 @@ import { Input, Select } from '@/components/ui/Field'
 import { SettingRow, Segmented, Toggle } from '@/components/ui/Controls'
 import { UpdateManager } from '@/components/updates/UpdateManager'
 import { useToast } from '@/components/Toast'
-import { useProfile, useUpdateProfile } from '@/lib/api/profile'
+import { useProfile, useUpdateProfile, useUploadAvatar } from '@/lib/api/profile'
+import { Avatar } from '@/components/ui/Avatar'
 import { useSettings, useUpdateSettings } from '@/lib/api/settings'
 import { useProjects } from '@/lib/api/projects'
 import { useAuthStore } from '@/stores/authStore'
@@ -33,6 +34,7 @@ export function AccountSection() {
   const { notify } = useToast()
   const { data: profile } = useProfile()
   const updateProfile = useUpdateProfile()
+  const uploadAvatar = useUploadAvatar()
   const email = useAuthStore((s) => s.user?.email ?? '')
   const [name, setName] = useState('')
   const [pw, setPw] = useState('')
@@ -75,6 +77,36 @@ export function AccountSection() {
       <Card>
         <CardHeader title="Profile" />
         <CardBody>
+          <SettingRow
+            title="Avatar"
+            description="PNG or JPG, shown in the top bar."
+            control={
+              <div className="flex items-center gap-3">
+                <Avatar
+                  name={profile?.display_name ?? email}
+                  url={profile?.avatar_url}
+                  className="size-9"
+                />
+                <label className="cursor-pointer text-xs text-[--color-accent] hover:underline">
+                  {uploadAvatar.isPending ? 'Uploading…' : 'Change'}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    hidden
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) {
+                        void uploadAvatar
+                          .mutateAsync(f)
+                          .then(() => notify('Avatar updated', 'success'))
+                          .catch((err) => notify(err.message ?? 'Upload failed', 'error'))
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            }
+          />
           <SettingRow
             title="Email"
             description="Your sign-in address. Data syncs to any device using this account."

@@ -8,8 +8,14 @@ import { NotificationBell } from '@/components/NotificationBell'
 import { TimerPill } from '@/components/TimerPill'
 import { NotificationEngine } from '@/lib/notificationEngine'
 import { SkeletonRows } from '@/components/ui/States'
+import { Avatar } from '@/components/ui/Avatar'
+import { displayNameOf, useProfile } from '@/lib/api/profile'
+import { useAuthStore } from '@/stores/authStore'
+import { Link } from 'react-router-dom'
 
 export function AppShell() {
+  const { data: profile } = useProfile()
+  const email = useAuthStore((s) => s.user?.email ?? '')
   return (
     <div className="flex h-full w-full overflow-hidden">
       <Sidebar />
@@ -21,6 +27,9 @@ export function AppShell() {
         >
           <TimerPill />
           <NotificationBell />
+          <Link to="/settings" title="Account settings">
+            <Avatar name={displayNameOf(profile, email)} url={profile?.avatar_url} className="size-6" />
+          </Link>
         </div>
         <main className="flex-1 overflow-y-auto">
           <ErrorBoundary>

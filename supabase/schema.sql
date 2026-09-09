@@ -1,4 +1,4 @@
--- Combined schema (migrations 0001-0010).
+-- Combined schema (migrations 0001-0011).
 
 -- === supabase/migrations/0001_initial_schema.sql ===
 -- Personal Project Tracker — initial schema
@@ -429,4 +429,27 @@ create policy "daily_plans — all" on daily_plans
 create trigger daily_plans_set_updated_at
   before update on daily_plans
   for each row execute function public.set_updated_at();
+
+-- === supabase/migrations/0011_avatars_bucket.sql ===
+-- Epic B3b: avatar storage. Public-read bucket; each user writes only their own folder.
+
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
+
+create policy "avatars — public read"
+  on storage.objects for select
+  using (bucket_id = 'avatars');
+
+create policy "avatars — write own folder"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "avatars — update own folder"
+  on storage.objects for update to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "avatars — delete own folder"
+  on storage.objects for delete to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
 

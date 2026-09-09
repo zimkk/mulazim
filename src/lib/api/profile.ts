@@ -39,3 +39,23 @@ export function useUpdateProfile() {
 export function displayNameOf(profile: Profile | null | undefined, email: string | undefined) {
   return profile?.display_name?.trim() || email?.split('@')[0] || 'there'
 }
+
+export function useUploadAvatar() {
+  const qc = useQueryClient()
+  const userId = useAuthStore((s) => s.user?.id)
+  return useMutation({
+    mutationFn: async (file: File): Promise<void> => {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
+      const path = `${userId}/avatar.${ext}`
+      const up = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (up.error) throw up.error
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      const url = `${data.publicUrl}?v=${Date.now()}`
+      const { error } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', userId!)
+      if (error) throw error
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.profile }),
+  })
+}

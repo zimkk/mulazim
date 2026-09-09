@@ -53,6 +53,22 @@ export interface UserSettings {
     autostart: boolean
     startMinimized: boolean
   }
+  perspectives: TaskPerspective[]
+}
+
+export interface TaskPerspective {
+  id: string
+  name: string
+  filters: {
+    q?: string
+    status?: string
+    priority?: string
+    projectId?: string
+    tagId?: string
+    dateFilter?: string
+    groupBy?: string
+    sortBy?: string
+  }
 }
 
 export const DASHBOARD_CARD_IDS = [
@@ -117,6 +133,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
     autostart: false,
     startMinimized: false,
   },
+  perspectives: [],
 }
 
 type Json = Record<string, unknown>

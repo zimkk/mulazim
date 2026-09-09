@@ -12,6 +12,7 @@ import { QuickAddTask } from '@/components/tasks/QuickAddTask'
 import { useAllTasks, useBulkDeleteTasks, useBulkUpdateTasks } from '@/lib/api/tasks'
 import { useProjects } from '@/lib/api/projects'
 import { useTags, useTaskTagMap } from '@/lib/api/tags'
+import { useSettings, useUpdateSettings } from '@/lib/api/settings'
 import { PRIORITIES, TASK_STATUSES, TASK_STATUS_LABEL } from '@/lib/constants'
 import { isOverdue, daysUntil } from '@/lib/utils/dates'
 import type { Priority, Task, TaskStatus, TaskWithProject } from '@/types/database'
@@ -29,6 +30,8 @@ export default function AllTasks() {
   const tagMap = useTaskTagMap()
   const bulkUpdate = useBulkUpdateTasks()
   const bulkDelete = useBulkDeleteTasks()
+  const { perspectives } = useSettings()
+  const updateSettings = useUpdateSettings()
   const { notify } = useToast()
 
   const [q, setQ] = useState('')
@@ -88,6 +91,34 @@ export default function AllTasks() {
     return [...map.entries()].map(([key, tasks]) => ({ key, tasks }))
   }, [filtered, groupBy, projects])
 
+  const currentFilters = { q, status, priority, projectId, tagId, dateFilter, groupBy, sortBy }
+  function applyPerspective(id: string) {
+    const p = perspectives.find((x) => x.id === id)
+    if (!p) return
+    const f = p.filters
+    setQ(f.q ?? '')
+    setStatus((f.status as typeof status) ?? 'open')
+    setPriority((f.priority as typeof priority) ?? 'all')
+    setProjectId(f.projectId ?? 'all')
+    setTagId(f.tagId ?? 'all')
+    setDateFilter((f.dateFilter as DateFilter) ?? 'any')
+    setGroupBy((f.groupBy as GroupBy) ?? 'project')
+    setSortBy((f.sortBy as SortBy) ?? 'due')
+  }
+  function savePerspective() {
+    const name = window.prompt('Name this view')?.trim()
+    if (!name) return
+    const next = [
+      ...perspectives,
+      { id: crypto.randomUUID(), name, filters: currentFilters },
+    ]
+    updateSettings({ perspectives: next })
+    notify(`Saved "${name}"`, 'success')
+  }
+  function deletePerspective(id: string) {
+    updateSettings({ perspectives: perspectives.filter((p) => p.id !== id) })
+  }
+
   function toggleSelect(id: string) {
     setSelected((s) => {
       const n = new Set(s)
@@ -109,6 +140,30 @@ export default function AllTasks() {
 
       <div className="mb-4">
         <QuickAddTask />
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-[--color-text-muted]">Views</span>
+        {perspectives.map((p) => (
+          <span
+            key={p.id}
+            className="inline-flex items-center gap-1 rounded-md border border-[--color-border] bg-[--color-surface] px-2 py-1 text-xs"
+          >
+            <button onClick={() => applyPerspective(p.id)} className="hover:text-[--color-accent]">
+              {p.name}
+            </button>
+            <button
+              onClick={() => deletePerspective(p.id)}
+              className="text-[--color-text-subtle] hover:text-[--color-stale]"
+              aria-label={`Delete ${p.name}`}
+            >
+              <X className="size-3" />
+            </button>
+          </span>
+        ))}
+        <Button size="sm" onClick={savePerspective}>
+          Save current view
+        </Button>
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
