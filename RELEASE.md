@@ -19,23 +19,21 @@ The **public** key is already wired into `src-tauri/tauri.conf.json`
 
 ### 2. GitHub Actions secrets
 
-Repo → Settings → Secrets and variables → Actions → **New repository secret**:
-
-| Secret | Value |
-|---|---|
-| `TAURI_SIGNING_PRIVATE_KEY` | the full contents of `.secrets/tauri-updater.key` (one base64 line) |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | *(empty — create the secret with no value, or skip and remove the env line)* |
-| `VITE_SUPABASE_URL` | `https://ztmedzpbvsabzfjpyzll.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | the anon key from `.env` (public value — safe to store) |
-
-With the GitHub CLI:
+Four repo secrets are needed. **Two are already set** (`VITE_SUPABASE_URL`,
+`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`). The remaining two contain key material and
+must be set by you — run these locally in the repo:
 
 ```bash
-gh secret set TAURI_SIGNING_PRIVATE_KEY < .secrets/tauri-updater.key
-gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --body ""
-gh secret set VITE_SUPABASE_URL --body "https://ztmedzpbvsabzfjpyzll.supabase.co"
-gh secret set VITE_SUPABASE_ANON_KEY --body "<anon key>"
+gh secret set TAURI_SIGNING_PRIVATE_KEY --repo zimkk/mulazim < .secrets/tauri-updater.key
+gh secret set VITE_SUPABASE_ANON_KEY   --repo zimkk/mulazim < <(grep -oP '(?<=^VITE_SUPABASE_ANON_KEY=).*' .env)
 ```
+
+| Secret | Value | Status |
+|---|---|---|
+| `VITE_SUPABASE_URL` | `https://ztmedzpbvsabzfjpyzll.supabase.co` | ✅ set |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | *(empty)* | ✅ set |
+| `TAURI_SIGNING_PRIVATE_KEY` | contents of `.secrets/tauri-updater.key` | ⬜ you |
+| `VITE_SUPABASE_ANON_KEY` | anon key from `.env` (public, safe to store) | ⬜ you |
 
 ## Cutting a release
 

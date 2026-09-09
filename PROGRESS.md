@@ -104,14 +104,26 @@ features (assignees, comments@mentions, sprints, permissions, dependencies graph
 - [x] H6  focus-visible ring, aria-labels on icon buttons, prefers-reduced-motion + reduce-motion setting
 - [x] H7  Branded icon set (grid mark) via `tauri icon`; matching favicon + Logo component
 - [x] H4  Multi-select bulk actions on the All Tasks page (set status/priority, move to trash)
-- [ ] H5  full skeleton/empty-state audit of newest screens — mostly covered, spot-check pending
-- [ ] H8  list virtualisation — not needed at personal-scale data yet
+- [x] H5  skeletons + empty states on every screen (Trash, Today, Upcoming, All Tasks, Calendar, Review)
+- [x] Rebindable keyboard shortcuts (settings.keybindings + record-keys UI)
+- [x] JSON import (round-trips a JSON export, links preserved)
+- [x] List drag-reorder for project tasks; board status-drag
+- [x] Settings search over the section nav
+- [ ] H8  list virtualisation — deliberately skipped (personal-scale data; premature)
+- [ ] A5b macOS traffic-light inset polish — skipped (native decorations are complete on all 3 OSes)
 
 ### EPIC I — Verification (per epic)
 - [x] tsc, oxlint (0 errors), vite build, cargo check, tauri build — all green after every epic
 - [x] scripts/e2e.mjs — 19 checks (auth, triggers, RLS, cascade)
-- [x] scripts/ui-smoke.mjs — 39 checks (all screens + flows incl. settings, board, timer, palette, trash)
-- [~] dark/light screenshot pass — spot-checked; full sweep pending
+- [x] scripts/ui-smoke.mjs — 39 checks (every screen + flow: settings, board, timer, palette, trash, calendar, plan, NL quick-add, bulk)
+- [x] dark/light + accent screenshot pass (`scripts/shots.mjs` → `.artifacts/`)
+
+### Release
+- [x] release.yml — mac/linux/windows matrix, tag-driven, signed updater artifacts
+- [~] GitHub Actions secrets — 2 of 4 set (`VITE_SUPABASE_URL`,
+  `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`); the two key-material secrets must be set
+  by the user (the classifier blocks pushing key values). Commands in `RELEASE.md`.
+- [ ] tag `v0.1.0` → first signed release for all three OSes
 
 
 ---
