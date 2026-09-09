@@ -60,12 +60,23 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      # The updater key secret can pick up a stray trailing newline / CR when
+      # it's set (web-UI paste, editors); Tauri's base64 decoder then rejects it
+      # ("Invalid symbol 61" = the '=' padding no longer at the string end).
+      # Re-export it with all whitespace stripped. The redirect keeps the value
+      # out of the log, and GitHub still masks it.
+      - name: Normalize the updater signing key
+        shell: bash
+        run: |
+          printf 'TAURI_SIGNING_PRIVATE_KEY=%s\n' "$(printf '%s' "$SIGNING_KEY" | tr -d ' \t\r\n')" >> "$GITHUB_ENV"
+        env:
+          SIGNING_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+
       - name: Build, sign and publish the desktop app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Tauri updater signing (npm run tauri signer generate)
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # TAURI_SIGNING_PRIVATE_KEY is set by the "Prepare signing key" step above.
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           # Public Supabase config baked into the client at build time
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
