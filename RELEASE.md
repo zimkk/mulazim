@@ -1,65 +1,81 @@
 # Release & auto-update runbook
 
-The pipeline (`.github/workflows/release.yml`) is **tag-driven**: push a `v*` tag,
-GitHub Actions builds + signs the desktop app on a Windows runner, generates the
-updater metadata (`latest.json`), and publishes a GitHub Release. Installed apps
-pick it up on next launch (`ARCHITECTURE.md` §33–§39).
+The pipeline (`.github/workflows/release.yml`) is **tag-driven**: push a `v*` tag →
+GitHub Actions builds + signs the app on macOS, Linux and Windows runners in
+parallel, generates the updater metadata (`latest.json`), and publishes a GitHub
+Release. Installed apps pick it up on next launch (`ARCHITECTURE.md` §33–§39).
 
 ## One-time setup
 
 ### 1. Updater signing key
 
-Already generated at `.secrets/tauri-updater.key` (+ `.pub`), password **empty**.
-`.secrets/` is git-ignored — **do not commit the private key**. Keep a backup
-somewhere safe; if it's lost, existing installs can never be updated again.
+Generated at `.secrets/tauri-updater.key` (+ `.pub`), password **empty**.
+`.secrets/` is git-ignored — **do not commit the private key**. Keep a backup;
+if it's lost, existing installs can never be updated again. The **public** key is
+wired into `src-tauri/tauri.conf.json` → `plugins.updater.pubkey`, and the
+endpoint is `https://github.com/zimkk/mulazim/releases/latest/download/latest.json`.
 
-The **public** key is already wired into `src-tauri/tauri.conf.json`
-(`plugins.updater.pubkey`) and the endpoint is set to
-`https://github.com/zimkk/mulazim/releases/latest/download/latest.json`.
+### 2. GitHub Actions secrets — all four set ✅
 
-### 2. GitHub Actions secrets
+| Secret | Value |
+|---|---|
+| `VITE_SUPABASE_URL` | `https://ztmedzpbvsabzfjpyzll.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | the public anon key from `.env` |
+| `TAURI_SIGNING_PRIVATE_KEY` | contents of `.secrets/tauri-updater.key` |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | *(empty)* |
 
-Four repo secrets are needed. **Two are already set** (`VITE_SUPABASE_URL`,
-`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`). The remaining two contain key material and
-must be set by you — run these locally in the repo:
+To rotate/re-set:
 
 ```bash
 gh secret set TAURI_SIGNING_PRIVATE_KEY --repo zimkk/mulazim < .secrets/tauri-updater.key
 gh secret set VITE_SUPABASE_ANON_KEY   --repo zimkk/mulazim < <(grep -oP '(?<=^VITE_SUPABASE_ANON_KEY=).*' .env)
 ```
 
-| Secret | Value | Status |
-|---|---|---|
-| `VITE_SUPABASE_URL` | `https://ztmedzpbvsabzfjpyzll.supabase.co` | ✅ set |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | *(empty)* | ✅ set |
-| `TAURI_SIGNING_PRIVATE_KEY` | contents of `.secrets/tauri-updater.key` | ⬜ you |
-| `VITE_SUPABASE_ANON_KEY` | anon key from `.env` (public, safe to store) | ⬜ you |
+### 3. (Optional) macOS notarization
+
+Unsigned builds work but Gatekeeper warns ("right-click → Open" the first time).
+To ship a notarized `.dmg`, add these repo secrets — the workflow already wires
+them and `tauri-action` picks them up automatically:
+
+`APPLE_CERTIFICATE` (base64 of a "Developer ID Application" .p12),
+`APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`
+(`Developer ID Application: Name (TEAMID)`), `APPLE_ID`, `APPLE_PASSWORD`
+(an app-specific password), `APPLE_TEAM_ID`. Requires a paid Apple Developer
+account.
+
+Windows Authenticode signing is similarly optional (an EV/OV code-signing cert).
 
 ## Cutting a release
 
 1. Bump the version in **both** `package.json` and `src-tauri/tauri.conf.json`
-   (keep them identical — SemVer, `ARCHITECTURE.md` §34).
-2. Commit, then tag and push:
+   (identical — SemVer, `ARCHITECTURE.md` §34). Update `Cargo.toml` if you like.
+2. Commit, tag, push:
    ```bash
    git commit -am "Release v0.2.0"
    git tag v0.2.0
    git push origin main v0.2.0
    ```
-3. Watch the **Release** workflow. On success there's a new GitHub Release with:
-   - `Grid Manager_x.y.z_x64-setup.exe` / `.msi` — the installer
-   - `latest.json` — updater manifest
-   - `*.sig` — detached signatures
-4. An already-installed app shows "Update available" on next launch → one click →
-   download → install → relaunch.
+3. Watch it: `gh run watch --repo zimkk/mulazim`.
+4. On success the Release has, per platform:
+   - **Windows** `Grid Manager_x.y.z_x64-setup.exe` (NSIS, bundles the WebView2
+     bootstrapper) + `_x64_en-US.msi`
+   - **macOS** `Grid Manager_x.y.z_universal.dmg` + `.app.tar.gz` (updater)
+   - **Linux** `grid-manager_x.y.z_amd64.deb`, `grid-manager-x.y.z-1.x86_64.rpm`,
+     `grid-manager_x.y.z_amd64.AppImage`
+   - `latest.json` + `*.sig` — the updater manifest and detached signatures
+5. Installed apps show "Update available" on next launch → one click → relaunch.
 
-## Adding macOS / Linux later
+## Re-cutting the same tag (before it's shipped to anyone)
 
-Uncomment the matrix rows in `release.yml`. macOS also wants
-`APPLE_CERTIFICATE*` / notarization secrets; Linux needs the `apt` deps step
-(already in the workflow, just gated on the platform).
+```bash
+gh run cancel <run-id> --repo zimkk/mulazim   # if one is mid-flight
+git push origin :refs/tags/v0.1.0             # delete remote tag
+git tag -d v0.1.0                             # delete local tag
+# fix things, commit, then re-tag:
+git tag v0.1.0 && git push origin v0.1.0
+```
 
 ## Schema changes
 
-Add a migration under `supabase/migrations/`, run `supabase db push` against the
-project, verify, **then** tag the app release. Existing cloud data must stay
-compatible (`ARCHITECTURE.md` §40).
+Add a migration under `supabase/migrations/`, `supabase db push`, verify, **then**
+tag the release. Existing cloud data must stay compatible (`ARCHITECTURE.md` §40).
