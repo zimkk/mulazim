@@ -44,7 +44,7 @@ features (assignees, comments@mentions, sprints, permissions, dependencies graph
 - [x] A4  Platform-aware ⌘/Ctrl labels (src/lib/tauri.ts)
 - [x] A6  tauri.conf.json: bundle category, macOS min-version, deb depends
 - [x] A7  `cargo check` + `npm run tauri build` green on Linux; RELEASE.md documents mac notarization / Windows Authenticode as later
-- [ ] A5  Custom in-app titlebar (kept native decorations — acceptable; revisit for macOS traffic-light insets)
+- [~] A5  Kept native window decorations (deliberate; works on all three OSes). macOS traffic-light inset polish still open.
 
 ### EPIC B — Settings system  ✅ DONE
 - [x] B1  user_settings synced JSONB table + useSettings/useUpdateSettings + <SettingsPersister/> (debounced) + deep-merge defaults
@@ -59,7 +59,8 @@ features (assignees, comments@mentions, sprints, permissions, dependencies graph
 - [x] B10 Updates & startup — autostart, start-minimised, UpdateManager
 - [x] B11 About — version + blurb
 - [x] B12 density/font-size/accent applied via data-* on <html>; boot cache prevents FOUC
-- [ ] B3b avatar upload · B9b JSON import · settings-search — deferred
+- [x] B3b avatar upload (public `avatars` bucket, own-folder RLS, top-bar avatar/initials)
+- [ ] B9b JSON import · settings-search — deferred
 
 ### EPIC C — Task depth  ✅ DONE (C7 deferred)
 - [x] C1  Subtasks/checklist editor in the task modal (add/toggle/delete + progress badge)
@@ -68,20 +69,22 @@ features (assignees, comments@mentions, sprints, permissions, dependencies graph
 - [x] C4  start_date (defer) separate from due_date; Today respects it
 - [x] C5  sort_order column + useReorderTasks (board drag uses status; list drag-reorder deferred)
 - [x] C6  Task modal is the detail surface (dates, estimate/actual, checklist, tags, recurrence, description)
-- [ ] C7  Natural-language quick-add parser — deferred
+- [x] C7  Natural-language quick-add: `#tag`, `!high`/`p1`, and date phrases parsed from the title
 
 ### EPIC D — Views  ✅ mostly done
 - [x] D1  Today page (overdue / due today / worth-a-look) + "time this week"
 - [x] D2  Upcoming page (next N days grouped, + Later)
 - [x] D4  Board (kanban by status) toggle on project detail, native drag between columns
 - [x] Command palette also searches task titles (part of D3/H3)
-- [ ] D3  dedicated All-Tasks page with rich filters/group-by · D5 calendar month view · D6 saved perspectives — deferred
+- [x] D3  All Tasks page — search + status/priority/project/tag/date filters, group-by, sort, bulk multi-select
+- [x] D5  Calendar month view (tasks by due date, day panel, first-day-of-week aware)
+- [x] D6  Saved perspectives (named filter combos in user_settings)
 
 ### EPIC E — Review & planning  ✅ mostly done
 - [x] E1  Project review interval + last_reviewed_at + "Mark reviewed" + "Needs review" dashboard card + pin
 - [x] E3  Weekly Review page: done this week, time logged, overdue, next 2 weeks, projects to check
 - [x] E4  Daily digest notification (in engine)
-- [ ] E2  Plan-my-day (daily_plans table) — deferred
+- [x] E2  Plan-my-day — `daily_plans` table; "Today's plan" card with add/remove + Auto-fill
 
 ### EPIC F — Time tracking  ✅ DONE
 - [x] F1  Estimate + tracked minutes; start/stop timer; TimerPill in top bar; play/stop on every task row
@@ -100,14 +103,14 @@ features (assignees, comments@mentions, sprints, permissions, dependencies graph
 - [x] H3  Global search in ⌘K (task titles + projects + clients + nav + actions)
 - [x] H6  focus-visible ring, aria-labels on icon buttons, prefers-reduced-motion + reduce-motion setting
 - [x] H7  Branded icon set (grid mark) via `tauri icon`; matching favicon + Logo component
-- [ ] H4  multi-select bulk actions — deferred
+- [x] H4  Multi-select bulk actions on the All Tasks page (set status/priority, move to trash)
 - [ ] H5  full skeleton/empty-state audit of newest screens — mostly covered, spot-check pending
 - [ ] H8  list virtualisation — not needed at personal-scale data yet
 
 ### EPIC I — Verification (per epic)
 - [x] tsc, oxlint (0 errors), vite build, cargo check, tauri build — all green after every epic
 - [x] scripts/e2e.mjs — 19 checks (auth, triggers, RLS, cascade)
-- [x] scripts/ui-smoke.mjs — 33 checks (all screens + flows incl. settings, board, timer, palette, trash)
+- [x] scripts/ui-smoke.mjs — 39 checks (all screens + flows incl. settings, board, timer, palette, trash)
 - [~] dark/light screenshot pass — spot-checked; full sweep pending
 
 
