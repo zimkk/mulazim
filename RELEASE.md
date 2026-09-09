@@ -34,14 +34,16 @@ gh secret set VITE_SUPABASE_ANON_KEY   --repo zimkk/mulazim < <(grep -oP '(?<=^V
 ### 3. (Optional) macOS notarization
 
 Unsigned builds work but Gatekeeper warns ("right-click → Open" the first time).
-To ship a notarized `.dmg`, add these repo secrets — the workflow already wires
-them and `tauri-action` picks them up automatically:
+To ship a notarized `.dmg` (needs a paid Apple Developer account):
 
-`APPLE_CERTIFICATE` (base64 of a "Developer ID Application" .p12),
-`APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`
-(`Developer ID Application: Name (TEAMID)`), `APPLE_ID`, `APPLE_PASSWORD`
-(an app-specific password), `APPLE_TEAM_ID`. Requires a paid Apple Developer
-account.
+1. Add these repo secrets: `APPLE_CERTIFICATE` (base64 of a "Developer ID
+   Application" .p12), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`
+   (`Developer ID Application: Name (TEAMID)`), `APPLE_ID`, `APPLE_PASSWORD`
+   (an app-specific password), `APPLE_TEAM_ID`.
+2. Uncomment / add the matching `APPLE_*: ${{ secrets.APPLE_* }}` lines under
+   the tauri-action `env:` block in `release.yml`. **Only add them once the
+   secrets exist** — with empty secrets, `tauri-action` tries to import an empty
+   keychain certificate and the macOS job fails.
 
 Windows Authenticode signing is similarly optional (an EV/OV code-signing cert).
 

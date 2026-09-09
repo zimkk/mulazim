@@ -70,14 +70,12 @@ jobs:
           # Public Supabase config baked into the client at build time
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          # Optional macOS code-signing + notarization. Leave the secrets unset
-          # to ship an unsigned .app/.dmg (Gatekeeper: right-click → Open once).
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # macOS ships unsigned (Gatekeeper: right-click -> Open the first time).
+          # To notarize, add APPLE_CERTIFICATE / APPLE_CERTIFICATE_PASSWORD /
+          # APPLE_SIGNING_IDENTITY / APPLE_ID / APPLE_PASSWORD / APPLE_TEAM_ID
+          # here and as repo secrets (RELEASE.md section 3). Do NOT add the env
+          # lines while the secrets are empty -- tauri-action then tries (and
+          # fails) to import an empty keychain certificate.
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Grid Manager ${{ github.ref_name }}'
