@@ -1,36 +1,34 @@
 import { useEffect } from 'react'
 import { useUiStore } from '@/stores/uiStore'
+import { useSettings } from '@/lib/api/settings'
+import { matchesBinding } from '@/lib/utils/keybinding'
 
-/** App-wide keyboard shortcuts (ARCHITECTURE.md §47). */
+/** App-wide keyboard shortcuts (ARCHITECTURE.md §47), rebindable via Settings → Keyboard. */
 export function useGlobalHotkeys() {
   const setOverlay = useUiStore((s) => s.setOverlay)
+  const { keybindings } = useSettings()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const mod = e.metaKey || e.ctrlKey
-      if (!mod) return
-
-      // Don't hijack shortcuts while typing, except for the palette itself.
       const el = e.target as HTMLElement | null
       const typing =
         el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
 
-      const key = e.key.toLowerCase()
-      if (key === 'k') {
+      if (matchesBinding(e, keybindings.palette)) {
         e.preventDefault()
         setOverlay('palette')
-      } else if (key === 'n' && !typing) {
-        e.preventDefault()
-        setOverlay('newTask')
-      } else if (key === 'p' && e.shiftKey && !typing) {
-        e.preventDefault()
-        setOverlay('newProject')
-      } else if (key === '/') {
+      } else if (matchesBinding(e, keybindings.shortcuts)) {
         e.preventDefault()
         setOverlay('shortcuts')
+      } else if (!typing && matchesBinding(e, keybindings.newTask)) {
+        e.preventDefault()
+        setOverlay('newTask')
+      } else if (!typing && matchesBinding(e, keybindings.newProject)) {
+        e.preventDefault()
+        setOverlay('newProject')
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [setOverlay])
+  }, [setOverlay, keybindings])
 }

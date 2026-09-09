@@ -20,7 +20,8 @@ import {
   useProject,
   useSetProjectFields,
 } from '@/lib/api/projects'
-import { useTasksByProject } from '@/lib/api/tasks'
+import { useReorderTasks, useTasksByProject } from '@/lib/api/tasks'
+import { GripVertical } from 'lucide-react'
 import { useAddNote, useProjectActivity } from '@/lib/api/activity'
 import { useUiStore } from '@/stores/uiStore'
 import { useSettings, useStaleThresholds } from '@/lib/api/settings'
@@ -43,6 +44,8 @@ export default function ProjectDetail() {
   const activity = useProjectActivity(id)
   const archive = useArchiveProject()
   const del = useDeleteProject()
+  const reorder = useReorderTasks()
+  const [dragId, setDragId] = useState<string | null>(null)
   const setFields = useSetProjectFields()
   const addNote = useAddNote()
 
@@ -74,6 +77,18 @@ export default function ProjectDetail() {
   const health = projectHealth(p, thresholds)
   const openTasks = (tasks.data ?? []).filter((t) => t.status !== 'done' && t.status !== 'cancelled')
   const doneTasks = (tasks.data ?? []).filter((t) => t.status === 'done' || t.status === 'cancelled')
+
+  function onDropReorder(targetId: string) {
+    if (!dragId || dragId === targetId) return setDragId(null)
+    const order = openTasks.map((t) => t.id).filter((x) => x !== dragId)
+    const at = order.indexOf(targetId)
+    order.splice(at, 0, dragId)
+    reorder.mutate({
+      projectId: p.id,
+      updates: order.map((id, i) => ({ id, sort_order: i })),
+    })
+    setDragId(null)
+  }
 
   async function onArchive() {
     await archive.mutateAsync(p.id)
@@ -225,7 +240,22 @@ export default function ProjectDetail() {
               <EmptyState title="No open tasks" description="Add a task to get started." />
             ) : (
               openTasks.map((t) => (
-                <TaskRow key={t.id} task={t} onEdit={(task) => setTaskModal({ open: true, task })} />
+                <div
+                  key={t.id}
+                  draggable
+                  onDragStart={() => setDragId(t.id)}
+                  onDragEnd={() => setDragId(null)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => onDropReorder(t.id)}
+                  className={
+                    'group flex items-center ' + (dragId === t.id ? 'opacity-40' : '')
+                  }
+                >
+                  <GripVertical className="ml-1 size-3.5 shrink-0 cursor-grab text-[--color-text-subtle] opacity-0 group-hover:opacity-100" />
+                  <div className="min-w-0 flex-1">
+                    <TaskRow task={t} onEdit={(task) => setTaskModal({ open: true, task })} />
+                  </div>
+                </div>
               ))
             )}
             {taskView === 'list' && doneTasks.length > 0 && (

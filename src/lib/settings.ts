@@ -53,7 +53,24 @@ export interface UserSettings {
     autostart: boolean
     startMinimized: boolean
   }
+  keybindings: Record<KeybindingAction, string>
   perspectives: TaskPerspective[]
+}
+
+export type KeybindingAction = 'palette' | 'newTask' | 'newProject' | 'shortcuts'
+
+export const KEYBINDING_LABEL: Record<KeybindingAction, string> = {
+  palette: 'Command palette / search',
+  newTask: 'New task',
+  newProject: 'New project',
+  shortcuts: 'Keyboard shortcuts',
+}
+
+export const DEFAULT_KEYBINDINGS: Record<KeybindingAction, string> = {
+  palette: 'mod+k',
+  newTask: 'mod+n',
+  newProject: 'mod+shift+p',
+  shortcuts: 'mod+/',
 }
 
 export interface TaskPerspective {
@@ -133,6 +150,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
     autostart: false,
     startMinimized: false,
   },
+  keybindings: { ...DEFAULT_KEYBINDINGS },
   perspectives: [],
 }
 

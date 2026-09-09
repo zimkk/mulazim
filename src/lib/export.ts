@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { isTauri } from '@/lib/tauri'
+import type { ActivityLog, Client, Project, Task } from '@/types/database'
 
 export type ExportFormat = 'json' | 'csv' | 'markdown'
 
@@ -98,4 +99,110 @@ export async function exportData(format: ExportFormat): Promise<'saved' | 'cance
   a.click()
   URL.revokeObjectURL(url)
   return 'saved'
+}
+
+export interface ImportResult {
+  clients: number
+  projects: number
+  tasks: number
+  activity: number
+}
+
+/**
+ * Import a JSON bundle previously produced by `exportData('json')`. Rows are
+ * re-inserted under the current user with fresh ids; old→new id maps keep the
+ * client→project→task→activity links intact. Existing data is left untouched.
+ */
+export async function importData(json: string, userId: string): Promise<ImportResult> {
+  const bundle = JSON.parse(json) as {
+    clients?: Client[]
+    projects?: Project[]
+    tasks?: Task[]
+    activity_logs?: ActivityLog[]
+  }
+  const res: ImportResult = { clients: 0, projects: 0, tasks: 0, activity: 0 }
+  const clientMap = new Map<string, string>()
+  const projectMap = new Map<string, string>()
+  const taskMap = new Map<string, string>()
+
+  for (const c of bundle.clients ?? []) {
+    const { data, error } = await supabase
+      .from('clients')
+      .insert({
+        user_id: userId,
+        name: c.name,
+        company_name: c.company_name ?? null,
+        email: c.email ?? null,
+        notes: c.notes ?? null,
+        status: c.status ?? 'active',
+      })
+      .select('id')
+      .single()
+    if (error) throw error
+    clientMap.set(c.id, data.id)
+    res.clients++
+  }
+
+  for (const p of bundle.projects ?? []) {
+    const { data, error } = await supabase
+      .from('projects')
+      .insert({
+        user_id: userId,
+        client_id: p.client_id ? (clientMap.get(p.client_id) ?? null) : null,
+        name: p.name,
+        description: p.description ?? null,
+        type: p.type ?? 'other',
+        status: p.status ?? 'active',
+        priority: p.priority ?? 'medium',
+        deadline: p.deadline ?? null,
+        review_interval_days: p.review_interval_days ?? null,
+      })
+      .select('id')
+      .single()
+    if (error) throw error
+    projectMap.set(p.id, data.id)
+    res.projects++
+  }
+
+  const taskRows = (bundle.tasks ?? [])
+    .filter((t) => projectMap.has(t.project_id))
+    .map((t) => ({
+      user_id: userId,
+      project_id: projectMap.get(t.project_id)!,
+      title: t.title,
+      description: t.description ?? null,
+      status: t.status ?? 'todo',
+      priority: t.priority ?? 'medium',
+      due_date: t.due_date ?? null,
+      start_date: t.start_date ?? null,
+      estimated_minutes: t.estimated_minutes ?? null,
+      recurrence: t.recurrence ?? 'none',
+      recurrence_until: t.recurrence_until ?? null,
+      completed_at: t.completed_at ?? null,
+    }))
+  if (taskRows.length) {
+    const { data, error } = await supabase.from('tasks').insert(taskRows).select('id')
+    if (error) throw error
+    ;(bundle.tasks ?? [])
+      .filter((t) => projectMap.has(t.project_id))
+      .forEach((t, i) => taskMap.set(t.id, data[i]!.id))
+    res.tasks = data.length
+  }
+
+  const noteRows = (bundle.activity_logs ?? [])
+    .filter((a) => a.activity_type === 'note_added' && a.description)
+    .map((a) => ({
+      user_id: userId,
+      project_id: a.project_id ? (projectMap.get(a.project_id) ?? null) : null,
+      task_id: a.task_id ? (taskMap.get(a.task_id) ?? null) : null,
+      activity_type: 'note_added' as const,
+      description: a.description,
+    }))
+  if (noteRows.length) {
+    const { error } = await supabase.from('activity_logs').insert(noteRows)
+    if (error) throw error
+    res.activity = noteRows.length
+  }
+
+  return res
 }

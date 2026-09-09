@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Check } from 'lucide-react'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -12,10 +13,17 @@ import { useSettings, useUpdateSettings } from '@/lib/api/settings'
 import { useProjects } from '@/lib/api/projects'
 import { useAuthStore } from '@/stores/authStore'
 import { supabase } from '@/lib/supabase'
-import { exportData, type ExportFormat } from '@/lib/export'
+import { exportData, importData, type ExportFormat } from '@/lib/export'
 import { appVersion, isAutostartEnabled, isTauri, setAutostart } from '@/lib/tauri'
-import { DEFAULT_SETTINGS, DASHBOARD_CARD_IDS, DASHBOARD_CARD_LABEL } from '@/lib/settings'
-import type { DashboardCardId } from '@/lib/settings'
+import {
+  DEFAULT_SETTINGS,
+  DEFAULT_KEYBINDINGS,
+  DASHBOARD_CARD_IDS,
+  DASHBOARD_CARD_LABEL,
+  KEYBINDING_LABEL,
+} from '@/lib/settings'
+import type { DashboardCardId, KeybindingAction } from '@/lib/settings'
+import { eventToBinding, prettyBinding } from '@/lib/utils/keybinding'
 import { PRIORITIES } from '@/lib/constants'
 import type { Priority } from '@/types/database'
 
@@ -606,31 +614,68 @@ export function WorkflowSection() {
 }
 
 /* ----------------------------- Keyboard ----------------------------- */
-const SHORTCUTS: [string, string][] = [
-  ['Command palette / search', '⌘ / Ctrl + K'],
-  ['New task', '⌘ / Ctrl + N'],
-  ['New project', '⌘ / Ctrl + ⇧ + P'],
-  ['Keyboard shortcuts', '⌘ / Ctrl + /'],
-  ['Settings', '⌘ / Ctrl + ,'],
-  ['Close dialog', 'Esc'],
-]
-
 export function KeyboardSection() {
+  const s = useSettings()
+  const update = useUpdateSettings()
+  const [recording, setRecording] = useState<KeybindingAction | null>(null)
+
+  useEffect(() => {
+    if (!recording) return
+    const onKey = (e: KeyboardEvent) => {
+      e.preventDefault()
+      const b = eventToBinding(e)
+      if (b === null) return // pure modifier — keep listening
+      if (e.key === 'Escape') {
+        setRecording(null)
+        return
+      }
+      update({ keybindings: { ...s.keybindings, [recording]: b } })
+      setRecording(null)
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [recording, s.keybindings, update])
+
   return (
     <Card>
       <CardHeader title="Keyboard shortcuts" />
       <CardBody>
         <ul className="divide-y divide-[--color-border]">
-          {SHORTCUTS.map(([what, keys]) => (
-            <li key={what} className="flex items-center justify-between py-2.5 text-sm">
-              <span className="text-[--color-text-muted]">{what}</span>
-              <kbd className="rounded border border-[--color-border] bg-[--color-surface-2] px-1.5 py-0.5 text-xs">
-                {keys}
-              </kbd>
+          {(Object.keys(KEYBINDING_LABEL) as KeybindingAction[]).map((action) => (
+            <li key={action} className="flex items-center justify-between py-2.5 text-sm">
+              <span className="text-[--color-text-muted]">{KEYBINDING_LABEL[action]}</span>
+              <button
+                onClick={() => setRecording(action)}
+                className={
+                  'rounded border px-2 py-0.5 text-xs ' +
+                  (recording === action
+                    ? 'border-[--color-accent] text-[--color-accent]'
+                    : 'border-[--color-border] bg-[--color-surface-2]')
+                }
+              >
+                {recording === action ? 'Press keys…' : prettyBinding(s.keybindings[action])}
+              </button>
             </li>
           ))}
+          <li className="flex items-center justify-between py-2.5 text-sm">
+            <span className="text-[--color-text-muted]">Settings</span>
+            <kbd className="rounded border border-[--color-border] bg-[--color-surface-2] px-2 py-0.5 text-xs">
+              {prettyBinding('mod+,')}
+            </kbd>
+          </li>
+          <li className="flex items-center justify-between py-2.5 text-sm">
+            <span className="text-[--color-text-muted]">Close a dialog</span>
+            <kbd className="rounded border border-[--color-border] bg-[--color-surface-2] px-2 py-0.5 text-xs">
+              Esc
+            </kbd>
+          </li>
         </ul>
-        <p className="mt-3 text-xs text-[--color-text-subtle]">Rebindable shortcuts are planned.</p>
+        <button
+          onClick={() => update({ keybindings: { ...DEFAULT_KEYBINDINGS } })}
+          className="mt-3 text-xs text-[--color-text-muted] hover:text-[--color-text]"
+        >
+          Reset to defaults
+        </button>
       </CardBody>
     </Card>
   )
@@ -639,7 +684,10 @@ export function KeyboardSection() {
 /* ----------------------------- Data ----------------------------- */
 export function DataSection() {
   const { notify } = useToast()
+  const qc = useQueryClient()
+  const userId = useAuthStore((s) => s.user?.id)
   const [busy, setBusy] = useState<ExportFormat | null>(null)
+  const [importing, setImporting] = useState(false)
 
   async function run(format: ExportFormat) {
     setBusy(format)
@@ -653,22 +701,70 @@ export function DataSection() {
     }
   }
 
+  async function onImport(file: File) {
+    if (!userId) return
+    setImporting(true)
+    try {
+      const text = await file.text()
+      const r = await importData(text, userId)
+      await qc.invalidateQueries()
+      notify(
+        `Imported ${r.clients} clients, ${r.projects} projects, ${r.tasks} tasks, ${r.activity} notes`,
+        'success',
+      )
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'Import failed', 'error')
+    } finally {
+      setImporting(false)
+    }
+  }
+
   return (
-    <Card>
-      <CardHeader title="Export your data" />
-      <CardBody className="space-y-3">
-        <p className="text-xs text-[--color-text-muted]">
-          Download every client, project, task and activity record. Your data always belongs to you.
-        </p>
-        <div className="flex gap-2">
-          {(['json', 'csv', 'markdown'] as ExportFormat[]).map((f) => (
-            <Button key={f} onClick={() => run(f)} loading={busy === f}>
-              {f.toUpperCase()}
-            </Button>
-          ))}
-        </div>
-      </CardBody>
-    </Card>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader title="Export your data" />
+        <CardBody className="space-y-3">
+          <p className="text-xs text-[--color-text-muted]">
+            Download every client, project, task and activity record. Your data always belongs to you.
+          </p>
+          <div className="flex gap-2">
+            {(['json', 'csv', 'markdown'] as ExportFormat[]).map((f) => (
+              <Button key={f} onClick={() => run(f)} loading={busy === f}>
+                {f.toUpperCase()}
+              </Button>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title="Import" />
+        <CardBody className="space-y-3">
+          <p className="text-xs text-[--color-text-muted]">
+            Load a JSON export. Rows are added alongside your existing data (never overwritten),
+            with client → project → task links preserved.
+          </p>
+          <label
+            className={
+              'inline-flex h-9 cursor-pointer items-center rounded-md border border-[--color-border] bg-[--color-surface] px-3.5 text-sm font-medium hover:bg-[--color-surface-2] ' +
+              (importing ? 'pointer-events-none opacity-60' : '')
+            }
+          >
+            {importing ? 'Importing…' : 'Choose a JSON file'}
+            <input
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void onImport(f)
+                e.target.value = ''
+              }}
+            />
+          </label>
+        </CardBody>
+      </Card>
+    </div>
   )
 }
 
