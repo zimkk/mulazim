@@ -39,6 +39,19 @@ export function useTasksByProject(projectId: string | undefined) {
   })
 }
 
+export function useAllTasks(includeDone = true) {
+  return useQuery({
+    queryKey: ['tasks', 'all', includeDone],
+    queryFn: async (): Promise<TaskWithProject[]> => {
+      let q = supabase.from('tasks').select(PROJECT_SELECT).is('deleted_at', null)
+      if (!includeDone) q = q.not('status', 'in', '(done,cancelled)')
+      const { data, error } = await q.order('created_at', { ascending: false })
+      if (error) throw error
+      return (data ?? []) as unknown as TaskWithProject[]
+    },
+  })
+}
+
 export function useCompletedSince(sinceIso: string) {
   return useQuery({
     queryKey: ['tasks', 'completedSince', sinceIso],
@@ -197,6 +210,49 @@ export function useDeleteTask() {
     },
     onSuccess: (_data, vars) => invalidate(qc, vars.projectId),
   })
+}
+
+export function useBulkUpdateTasks() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      ids,
+      patch,
+    }: {
+      ids: string[]
+      patch: Partial<Pick<Task, 'status' | 'priority' | 'project_id' | 'due_date'>>
+    }): Promise<void> => {
+      const body: Record<string, unknown> = { ...patch }
+      if (patch.status === 'done') body.completed_at = new Date().toISOString()
+      if (patch.status && patch.status !== 'done') body.completed_at = null
+      const { error } = await supabase.from('tasks').update(body).in('id', ids)
+      if (error) throw error
+    },
+    onSuccess: () => invalidateEverywhere(qc),
+  })
+}
+
+export function useBulkDeleteTasks() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (ids: string[]): Promise<void> => {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ deleted_at: new Date().toISOString() })
+        .in('id', ids)
+      if (error) throw error
+    },
+    onSuccess: () => invalidateEverywhere(qc),
+  })
+}
+
+function invalidateEverywhere(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: qk.tasks })
+  void qc.invalidateQueries({ queryKey: qk.projects })
+  void qc.invalidateQueries({ queryKey: qk.clients })
+  void qc.invalidateQueries({ queryKey: qk.dashboard })
+  void qc.invalidateQueries({ queryKey: qk.activity })
+  void qc.invalidateQueries({ queryKey: ['trash'] })
 }
 
 export function useReorderTasks() {

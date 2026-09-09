@@ -14,10 +14,14 @@ export function TaskRow({
   task,
   onEdit,
   showProject = false,
+  selected,
+  onSelect,
 }: {
   task: Task | TaskWithProject
   onEdit?: (task: Task) => void
   showProject?: boolean
+  selected?: boolean
+  onSelect?: (id: string, additive: boolean) => void
 }) {
   const update = useUpdateTask()
   const tagMap = useTaskTagMap()
@@ -35,7 +39,24 @@ export function TaskRow({
   }
 
   return (
-    <div className="flex items-center gap-3 border-b border-[--color-border] px-3 py-2 last:border-b-0">
+    <div
+      className={cn(
+        'flex items-center gap-3 border-b border-[--color-border] px-3 py-2 last:border-b-0',
+        selected && 'bg-[--color-accent]/8',
+      )}
+    >
+      {onSelect && (
+        <input
+          type="checkbox"
+          checked={!!selected}
+          onChange={(e) =>
+            onSelect(task.id, (e.nativeEvent as MouseEvent).shiftKey || (e.nativeEvent as MouseEvent).metaKey)
+          }
+          onClick={(e) => e.stopPropagation()}
+          aria-label="Select task"
+          className="shrink-0"
+        />
+      )}
       <button
         onClick={() => setStatus(done ? 'todo' : 'done')}
         className={cn(

@@ -131,7 +131,7 @@ try {
   await clickText('a', 'UI Project')
   await byText('h1', 'UI Project')
   ok('project detail opens', true)
-  const quick = await page.$('input[placeholder="Add a task and press Enter"]')
+  const quick = await page.$('input[placeholder^="Add a task"]')
   await quick.type('First task from UI')
   await quick.press('Enter')
   await byText('button, span', 'First task from UI')
@@ -201,6 +201,48 @@ try {
       timeout: 6000,
     })
     ok('stopping a timer clears it', true)
+  }
+
+  // --- All tasks page: filters + natural-language quick-add + bulk ---
+  await clickText('a', 'All tasks')
+  await byText('h1', 'All tasks')
+  ok('All tasks view renders', true)
+  {
+    const nl = await page.$('input[placeholder^="Add a task"]')
+    await nl.type('Review analytics #metrics !high tomorrow')
+    await nl.press('Enter')
+    await page.waitForFunction(() => document.body.innerText.includes('Review analytics'), { timeout: 8000 })
+    // the clean title (tokens stripped) is what renders
+    const titleClean = await page.evaluate(
+      () =>
+        !document.body.innerText.includes('#metrics') &&
+        !document.body.innerText.includes('!high tomorrow'),
+    )
+    ok('quick-add strips NL tokens from the title', titleClean)
+    // tag chip appears on the row within a couple seconds
+    await page
+      .waitForFunction(
+        () => {
+          const row = [...document.querySelectorAll('div')].find((d) =>
+            d.textContent?.includes('Review analytics'),
+          )
+          return row?.textContent?.includes('metrics')
+        },
+        { timeout: 8000 },
+      )
+      .then(() => ok('quick-add parses #tag and attaches it', true))
+      .catch(() => ok('quick-add parses #tag and attaches it', false))
+  }
+  // bulk select + set priority
+  {
+    const boxes = await page.$$('input[aria-label="Select task"]')
+    if (boxes.length >= 1) {
+      await boxes[0].click()
+      await byText('span', 'selected')
+      ok('selecting a task shows the bulk bar', true)
+    } else {
+      ok('bulk selection checkboxes present', false, 'no checkboxes found')
+    }
   }
 
   // Back to the dashboard — it should now show real sections, not a blank grid.

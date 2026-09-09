@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { retrying, supabase } from '@/lib/supabase'
 import { qk } from '@/lib/queryKeys'
 import { useAuthStore } from '@/stores/authStore'
 import {
@@ -79,9 +79,11 @@ export function SettingsPersister() {
     if (serialized === lastSaved.current) return
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(async () => {
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({ id: userId, data: data as unknown as Record<string, unknown> })
+      const { error } = await retrying(() =>
+        supabase
+          .from('user_settings')
+          .upsert({ id: userId, data: data as unknown as Record<string, unknown> }),
+      )
       if (error) {
         // eslint-disable-next-line no-console
         console.warn('settings persist failed:', error.message)

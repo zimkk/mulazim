@@ -5,6 +5,9 @@ import { Input, Select } from '@/components/ui/Field'
 import { useToast } from '@/components/Toast'
 import { useProjects } from '@/lib/api/projects'
 import { useCreateTask } from '@/lib/api/tasks'
+import { useSettings } from '@/lib/api/settings'
+import { useCreateTag, useSetTaskTags, useTags } from '@/lib/api/tags'
+import { parseQuickAdd } from '@/lib/utils/parseQuickAdd'
 
 /**
  * Fast task capture (ARCHITECTURE.md §23). When `projectId` is omitted a project
@@ -20,17 +23,37 @@ export function QuickAddTask({
   const { notify } = useToast()
   const create = useCreateTask()
   const { data: projects } = useProjects()
+  const { general } = useSettings()
+  const { data: allTags } = useTags()
+  const createTag = useCreateTag()
+  const setTaskTags = useSetTaskTags()
   const [title, setTitle] = useState('')
   const [pickedProject, setPickedProject] = useState('')
 
-  const targetProject = projectId ?? pickedProject
   const activeProjects = (projects ?? []).filter((p) => p.status === 'active' || p.status === 'on_hold')
+  const targetProject =
+    projectId ?? (pickedProject || general.defaultProjectId || activeProjects[0]?.id || '')
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     if (!title.trim() || !targetProject) return
     try {
-      await create.mutateAsync({ title: title.trim(), project_id: targetProject })
+      // Natural language: "#tag  !urgent  tomorrow"
+      const parsed = parseQuickAdd(title)
+      const task = await create.mutateAsync({
+        title: parsed.title || title.trim(),
+        project_id: targetProject,
+        priority: parsed.priority ?? general.defaultTaskPriority,
+        due_date: parsed.dueDate,
+      })
+      if (parsed.tagNames.length) {
+        const ids: string[] = []
+        for (const name of parsed.tagNames) {
+          const existing = allTags?.find((t) => t.name.toLowerCase() === name.toLowerCase())
+          ids.push(existing ? existing.id : (await createTag.mutateAsync({ name, color: 'slate' })).id)
+        }
+        await setTaskTags.mutateAsync({ taskId: task.id, tagIds: ids })
+      }
       setTitle('')
       notify('Task added', 'success')
       onCreated?.()
@@ -41,13 +64,12 @@ export function QuickAddTask({
 
   return (
     <form onSubmit={onSubmit} className="flex items-center gap-2">
-      {!projectId && (
+      {!projectId && activeProjects.length > 0 && (
         <Select
-          value={pickedProject}
+          value={pickedProject || targetProject}
           onChange={(e) => setPickedProject(e.target.value)}
           className="h-9 w-44"
         >
-          <option value="">Choose project…</option>
           {activeProjects.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -58,7 +80,7 @@ export function QuickAddTask({
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Add a task and press Enter"
+        placeholder="Add a task…  try  #design  !urgent  tomorrow"
         className="flex-1"
       />
       <Button

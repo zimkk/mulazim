@@ -15,3 +15,22 @@ export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
     storageKey: 'grid-manager-auth',
   },
 })
+
+/**
+ * Retry a Supabase call a few times on transient failures (network blips and
+ * PostgREST's "JWT issued at future" clock-skew rejection). For code paths
+ * outside TanStack Query, which has its own retry.
+ */
+export async function retrying<T>(
+  fn: () => PromiseLike<{ data: T; error: { message: string } | null }>,
+  tries = 4,
+): Promise<{ data: T; error: { message: string } | null }> {
+  let last: { data: T; error: { message: string } | null } = { data: null as T, error: null }
+  for (let i = 0; i < tries; i++) {
+    last = await fn()
+    if (!last.error || !/issued at future|JWT|PGRST303|fetch|network|timeout/i.test(last.error.message))
+      return last
+    await new Promise((r) => setTimeout(r, 300 * 2 ** i))
+  }
+  return last
+}
