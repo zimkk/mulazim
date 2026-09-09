@@ -37,78 +37,79 @@ personal-productivity depth (subtasks, tags, recurring, today/upcoming, review,
 time tracking, notifications, real settings) and deliberately skip team/enterprise
 features (assignees, comments@mentions, sprints, permissions, dependencies graphs).
 
-### EPIC A — Cross-platform foundation  ✅ target: runs & self-updates on macOS, Linux, Windows
-- [ ] A1  Release CI matrix: `macos-latest` (universal), `ubuntu-22.04`, `windows-latest`; per-OS updater artifacts + `latest.json`
-- [ ] A2  Native app menu (Tauri `Menu`): App/File/Edit/View/Window/Help. Edit menu wired to `undo/redo/cut/copy/paste/selectAll` so macOS webview gets clipboard; `Cmd+,` → Settings; About item
-- [ ] A3  Plugins: `single-instance`, `window-state` (remember size/pos/maximised), `autostart` (opt-in), `os` (platform detection)
-- [ ] A4  Platform-aware shortcut labels (⌘ vs Ctrl) from `@tauri-apps/plugin-os` / `navigator.platform`
-- [ ] A5  Custom in-app titlebar option OR keep native decorations consistently; ensure `data-tauri-drag-region` works; macOS traffic-light inset padding
-- [ ] A6  `tauri.conf.json`: per-platform bundle config, category, min-OS versions; document macOS signing/notarization + Windows Authenticode as later
-- [ ] A7  Verify `tauri build` on Linux still green; CI dry-run notes for mac/win
+### EPIC A — Cross-platform foundation  ✅ DONE
+- [x] A1  Release CI matrix: macOS-universal + ubuntu-22.04 + windows-latest; per-OS updater artifacts
+- [x] A2  Native app menu (Rust): App/File/Edit/View/Window/Help; Edit menu gives macOS webview clipboard+undo; ⌘, → Settings; menu clicks bridged to React (useMenuBridge)
+- [x] A3  Plugins: single-instance (focuses running window), window-state, autostart (opt-in), os, fs
+- [x] A4  Platform-aware ⌘/Ctrl labels (src/lib/tauri.ts)
+- [x] A6  tauri.conf.json: bundle category, macOS min-version, deb depends
+- [x] A7  `cargo check` + `npm run tauri build` green on Linux; RELEASE.md documents mac notarization / Windows Authenticode as later
+- [ ] A5  Custom in-app titlebar (kept native decorations — acceptable; revisit for macOS traffic-light insets)
 
-### EPIC B — Settings system  ✅ target: a real, categorized preferences panel
-- [ ] B1  Split prefs: `localSettings` (zustand+persist — window/UI conveniences) vs `user_settings` (new synced table, 1 JSONB row/user, RLS) via `useSettings()` with typed schema + defaults + migration-safe merge
-- [ ] B2  Settings shell: left category nav + routed panes (`/settings/:section`), search-in-settings, dirty/save affordance where needed
-- [ ] B3  **Account** — display name, avatar (Supabase Storage bucket `avatars`, or initials fallback), email, change password, sign out, **Danger zone**: delete all data / delete account
-- [ ] B4  **Appearance** — theme light/dark/system; accent colour (6 presets); UI density comfortable/compact; font size S/M/L; sidebar default state; first day of week; reduce motion
-- [ ] B5  **General** — landing view on launch; default new-task priority; default project; date display relative/absolute; confirm-before-delete
-- [ ] B6  **Notifications** — master toggle; overdue / due-soon (lead time) / stale-project reminders; daily digest time; quiet hours; per-channel (native desktop) — request OS permission inline
-- [ ] B7  **Workflow** — stale thresholds (move here); recommendation-queue weights; dashboard cards: which show + order (drag)
-- [ ] B8  **Keyboard** — full shortcut reference (platform-aware); note which are remappable later
-- [ ] B9  **Data** — export JSON / CSV / Markdown (clients, projects, tasks, activity, time); import JSON; "download a backup" ; last-export timestamp
-- [ ] B10 **Updates** — auto-check toggle; channel; current version; check-now; link to release notes
-- [ ] B11 **About** — version, build, links, third-party licenses/acknowledgements
-- [ ] B12 Apply density + font-size + accent as `data-*` attrs / CSS vars on `<html>`; theme tokens extended for all of it
+### EPIC B — Settings system  ✅ DONE
+- [x] B1  user_settings synced JSONB table + useSettings/useUpdateSettings + <SettingsPersister/> (debounced) + deep-merge defaults
+- [x] B2  Settings shell: left category nav + routed panes (/settings/:section)
+- [x] B3  Account — email, display name, change password, sign out, danger-zone "delete all data"
+- [x] B4  Appearance — theme, 6 accent presets, density, font size, reduce motion, first day of week
+- [x] B5  General — landing view, default task priority, default project, date style, confirm-before-delete, upcoming range
+- [x] B6  Notifications — master + per-category toggles, due-soon lead days, daily digest time, quiet hours, OS permission request
+- [x] B7  Workflow — stale thresholds + dashboard cards show/hide + reorder
+- [x] B8  Keyboard — shortcut reference
+- [x] B9  Data — export JSON / CSV / Markdown via native save dialog
+- [x] B10 Updates & startup — autostart, start-minimised, UpdateManager
+- [x] B11 About — version + blurb
+- [x] B12 density/font-size/accent applied via data-* on <html>; boot cache prevents FOUC
+- [ ] B3b avatar upload · B9b JSON import · settings-search — deferred
 
-### EPIC C — Task depth
-- [ ] C1  Subtasks / checklist (`subtasks` table): add, toggle, reorder, progress bar on the task
-- [ ] C2  Tags (`tags` + `task_tags`): create/colour/rename/delete; assign on task; filter by tag; tag chips
-- [ ] C3  Recurring tasks: `recurrence` (none/daily/weekly/monthly/weekdays/custom-interval) + `recurrence_until`; on complete → materialise next occurrence
-- [ ] C4  `start_date` (defer) distinct from `due_date`: deferred tasks hidden from Today until start
-- [ ] C5  Manual ordering: `sort_order` per project + drag-and-drop reorder in task lists
-- [ ] C6  Task detail view/drawer: description, checklist, tags, dates, estimate/actual, activity, notes — reachable from any list
-- [ ] C7  Natural-language quick-add ("fix bug tomorrow 3pm #urgent") — lightweight parser (chrono-like) for date + priority + tag tokens
+### EPIC C — Task depth  ✅ DONE (C7 deferred)
+- [x] C1  Subtasks/checklist editor in the task modal (add/toggle/delete + progress badge)
+- [x] C2  Tags: create/assign inline, chips on rows
+- [x] C3  Recurrence (daily/weekdays/weekly/biweekly/monthly + until) → next occurrence on complete
+- [x] C4  start_date (defer) separate from due_date; Today respects it
+- [x] C5  sort_order column + useReorderTasks (board drag uses status; list drag-reorder deferred)
+- [x] C6  Task modal is the detail surface (dates, estimate/actual, checklist, tags, recurrence, description)
+- [ ] C7  Natural-language quick-add parser — deferred
 
-### EPIC D — Views
-- [ ] D1  **Today** page — overdue + due/scheduled today across all projects; grouped; quick reschedule
-- [ ] D2  **Upcoming** page — next 7 (configurable) days grouped by day; mini calendar strip
-- [ ] D3  **All Tasks** page — global list; filters (status/priority/tag/project/date range/health); group-by (project/priority/due/tag); sort; saved as a Perspective
-- [ ] D4  Board (kanban by status) toggle on Project detail + All Tasks; drag between columns
-- [ ] D5  **Calendar** month view — tasks by due date; click a day → that day's tasks
-- [ ] D6  Perspectives: save a filter+group+sort combo to the sidebar
+### EPIC D — Views  ✅ mostly done
+- [x] D1  Today page (overdue / due today / worth-a-look) + "time this week"
+- [x] D2  Upcoming page (next N days grouped, + Later)
+- [x] D4  Board (kanban by status) toggle on project detail, native drag between columns
+- [x] Command palette also searches task titles (part of D3/H3)
+- [ ] D3  dedicated All-Tasks page with rich filters/group-by · D5 calendar month view · D6 saved perspectives — deferred
 
-### EPIC E — Review & planning
-- [ ] E1  Project review: `review_interval_days` + `last_reviewed_at`; "Needs review" queue on Dashboard + a Review page; "Mark reviewed"
-- [ ] E2  Plan-my-day: pick tasks into a per-date focus list (`daily_plans`); Today page shows the plan first
-- [ ] E3  Weekly review screen: completed this week, still open, stale, upcoming deadlines, time logged
-- [ ] E4  Daily digest: in-app summary card + optional notification at configured time
+### EPIC E — Review & planning  ✅ mostly done
+- [x] E1  Project review interval + last_reviewed_at + "Mark reviewed" + "Needs review" dashboard card + pin
+- [x] E3  Weekly Review page: done this week, time logged, overdue, next 2 weeks, projects to check
+- [x] E4  Daily digest notification (in engine)
+- [ ] E2  Plan-my-day (daily_plans table) — deferred
 
-### EPIC F — Time tracking
-- [ ] F1  Estimate (exists) + actual UI on tasks; start/stop timer; running-timer pill in the shell with elapsed
-- [ ] F2  `time_entries` table (multiple sessions/task); edit/delete entries
-- [ ] F3  Time report: by project / by day / this week; rolls into weekly review and project detail
+### EPIC F — Time tracking  ✅ DONE
+- [x] F1  Estimate + tracked minutes; start/stop timer; TimerPill in top bar; play/stop on every task row
+- [x] F2  time_entries table (multiple sessions/task); stop rolls minutes into task.actual_minutes
+- [x] F3  Time report by project (Today page + Weekly Review)
 
-### EPIC G — Notifications & background
-- [ ] G1  Native notifications via `@tauri-apps/plugin-notification`; permission request in onboarding + Settings
-- [ ] G2  Alert engine: on launch + focus + interval, compute overdue / due-soon / stale / needs-review; respect settings + quiet hours; dedupe (store last-fired)
-- [ ] G3  Daily digest notification at configured local time
-- [ ] G4  In-app notification centre: bell in shell, `notifications` table, unread badge, mark-read, "snooze"
+### EPIC G — Notifications & background  ✅ DONE
+- [x] G1  Native notifications (Tauri plugin / Notification API); permission request in Settings + engine
+- [x] G2  Alert engine: launch + focus + 5-min interval; overdue / due-soon / stale / needs-review; quiet hours; dedupe vs unread
+- [x] G3  Daily digest at configured time (once/day)
+- [x] G4  In-app notification centre: bell + dropdown + unread badge + mark-read + clear (notifications table)
 
 ### EPIC H — Polish & UX
-- [ ] H1  Undo for destructive actions: soft-delete (`deleted_at`) on clients/projects/tasks; toast with Undo; **Trash** view with restore + purge
-- [ ] H2  First-run onboarding: name, theme pick, "add sample data or start empty", create first project
-- [ ] H3  Global search: ⌘K also searches task titles + descriptions + notes (not just names); recent + results sections
-- [ ] H4  Bulk actions: shift/ctrl multi-select in task lists → set status/priority/tag/project/delete
-- [ ] H5  Loading skeletons + empty states audit across every new screen
-- [ ] H6  A11y pass: focus-visible rings, list keyboard nav, ARIA on menus/dialogs, `prefers-reduced-motion`, colour-contrast check in both themes
-- [ ] H7  Branded app icon set (replace Tauri defaults) — all platform sizes
-- [ ] H8  Perf: virtualised long lists, route-level code-split audit, memoisation of heavy selectors
+- [x] H1  Soft delete (deleted_at) on clients/projects/tasks; Trash page (restore + purge); confirm-before-delete
+- [x] H2  First-run onboarding card (name, create first project, sample data)
+- [x] H3  Global search in ⌘K (task titles + projects + clients + nav + actions)
+- [x] H6  focus-visible ring, aria-labels on icon buttons, prefers-reduced-motion + reduce-motion setting
+- [x] H7  Branded icon set (grid mark) via `tauri icon`; matching favicon + Logo component
+- [ ] H4  multi-select bulk actions — deferred
+- [ ] H5  full skeleton/empty-state audit of newest screens — mostly covered, spot-check pending
+- [ ] H8  list virtualisation — not needed at personal-scale data yet
 
-### EPIC I — Verification (runs after each epic)
-- [ ] `tsc --noEmit`, `oxlint`, `vite build`, `cargo check`, `tauri build`
-- [ ] Extend `scripts/e2e.mjs` for every new table + trigger + RLS
-- [ ] Extend `scripts/ui-smoke.mjs` for every new screen & flow
-- [ ] Manual dark/light screenshot pass per screen
+### EPIC I — Verification (per epic)
+- [x] tsc, oxlint (0 errors), vite build, cargo check, tauri build — all green after every epic
+- [x] scripts/e2e.mjs — 19 checks (auth, triggers, RLS, cascade)
+- [x] scripts/ui-smoke.mjs — 33 checks (all screens + flows incl. settings, board, timer, palette, trash)
+- [~] dark/light screenshot pass — spot-checked; full sweep pending
+
 
 ---
 

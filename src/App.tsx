@@ -16,6 +16,7 @@ const ProjectDetail = lazy(() => import('@/pages/ProjectDetail'))
 const Clients = lazy(() => import('@/pages/Clients'))
 const ClientDetail = lazy(() => import('@/pages/ClientDetail'))
 const ActivityPage = lazy(() => import('@/pages/ActivityPage'))
+const Review = lazy(() => import('@/pages/Review'))
 const Trash = lazy(() => import('@/pages/Trash'))
 const Settings = lazy(() => import('@/pages/Settings'))
 
@@ -38,6 +39,7 @@ const router = createHashRouter([
       { path: 'clients', element: <Clients /> },
       { path: 'clients/:id', element: <ClientDetail /> },
       { path: 'activity', element: <ActivityPage /> },
+      { path: 'review', element: <Review /> },
       { path: 'trash', element: <Trash /> },
       { path: 'settings', element: <Settings /> },
       { path: 'settings/:section', element: <Settings /> },

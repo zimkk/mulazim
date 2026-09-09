@@ -39,6 +39,23 @@ export function useTasksByProject(projectId: string | undefined) {
   })
 }
 
+export function useCompletedSince(sinceIso: string) {
+  return useQuery({
+    queryKey: ['tasks', 'completedSince', sinceIso],
+    queryFn: async (): Promise<TaskWithProject[]> => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select(PROJECT_SELECT)
+        .is('deleted_at', null)
+        .eq('status', 'done')
+        .gte('completed_at', sinceIso)
+        .order('completed_at', { ascending: false })
+      if (error) throw error
+      return (data ?? []) as unknown as TaskWithProject[]
+    },
+  })
+}
+
 export function useAllOpenTasks() {
   return useQuery({
     queryKey: qk.tasks,
