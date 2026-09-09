@@ -1,0 +1,88 @@
+@import 'tailwindcss';
+
+/* Dark mode is driven by a `.dark` class on <html>, toggled from the UI store. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+
+  /* Neutral scale (slate-ish) */
+  --color-bg: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-surface-2: #f1f3f5;
+  --color-border: #e2e5e9;
+  --color-text: #1a1d21;
+  --color-text-muted: #6b7280;
+  --color-text-subtle: #9aa1ab;
+
+  /* Accent */
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-accent-fg: #ffffff;
+
+  /* Semantic — health / status */
+  --color-healthy: #16a34a;
+  --color-attention: #d97706;
+  --color-stale: #dc2626;
+  --color-overdue: #dc2626;
+  --color-onhold: #6b7280;
+  --color-info: #0891b2;
+}
+
+/* Dark theme token overrides */
+.dark {
+  --color-bg: #0f1115;
+  --color-surface: #171a21;
+  --color-surface-2: #1f232c;
+  --color-border: #2a2f3a;
+  --color-text: #e6e8 eb;
+  --color-text: #e6e8eb;
+  --color-text-muted: #9aa1ab;
+  --color-text-subtle: #6b7280;
+
+  --color-accent: #3b82f6;
+  --color-accent-hover: #60a5fa;
+  --color-accent-fg: #0b1220;
+
+  --color-healthy: #22c55e;
+  --color-attention: #f59e0b;
+  --color-stale: #ef4444;
+  --color-overdue: #ef4444;
+  --color-onhold: #9ca3af;
+  --color-info: #22d3ee;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden; /* desktop shell — panels scroll, not the window */
+}
+
+/* Let the OS drag the window from elements marked data-tauri-drag-region */
+[data-tauri-drag-region] {
+  app-region: drag;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

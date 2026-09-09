@@ -1,0 +1,219 @@
+import { useEffect, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { ArrowLeft, Archive, Pencil, Plus } from 'lucide-react'
+import { Page } from '@/components/layout/AppShell'
+import { Card, CardBody, CardHeader } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { Textarea } from '@/components/ui/Field'
+import { Badge, HealthBadge, PriorityBadge } from '@/components/ui/Badge'
+import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
+import { useToast } from '@/components/Toast'
+import { TaskRow } from '@/components/tasks/TaskRow'
+import { TaskFormModal } from '@/components/tasks/TaskFormModal'
+import { QuickAddTask } from '@/components/tasks/QuickAddTask'
+import { ActivityTimeline } from '@/components/activity/ActivityTimeline'
+import { ProjectFormModal } from '@/components/projects/ProjectFormModal'
+import { useArchiveProject, useProject } from '@/lib/api/projects'
+import { useTasksByProject } from '@/lib/api/tasks'
+import { useAddNote, useProjectActivity } from '@/lib/api/activity'
+import { useUiStore } from '@/stores/uiStore'
+import { projectHealth } from '@/lib/utils/health'
+import { dueLabel, relativeTime } from '@/lib/utils/dates'
+import { PROJECT_STATUS_LABEL } from '@/lib/constants'
+import type { Task } from '@/types/database'
+
+export default function ProjectDetail() {
+  const { id } = useParams<{ id: string }>()
+  const { notify } = useToast()
+  const setLastProjectId = useUiStore((s) => s.setLastProjectId)
+  const thresholds = useUiStore((s) => s.staleThresholds)
+
+  const project = useProject(id)
+  const tasks = useTasksByProject(id)
+  const activity = useProjectActivity(id)
+  const archive = useArchiveProject()
+  const addNote = useAddNote()
+
+  const [editing, setEditing] = useState(false)
+  const [taskModal, setTaskModal] = useState<{ open: boolean; task?: Task }>({ open: false })
+  const [note, setNote] = useState('')
+
+  useEffect(() => {
+    if (id) setLastProjectId(id)
+  }, [id, setLastProjectId])
+
+  if (project.isError) {
+    return (
+      <Page>
+        <ErrorState message="Project not found." onRetry={project.refetch} />
+      </Page>
+    )
+  }
+  if (project.isLoading || !project.data) {
+    return (
+      <Page>
+        <SkeletonRows rows={8} />
+      </Page>
+    )
+  }
+
+  const p = project.data
+  const health = projectHealth(p, thresholds)
+  const openTasks = (tasks.data ?? []).filter((t) => t.status !== 'done' && t.status !== 'cancelled')
+  const doneTasks = (tasks.data ?? []).filter((t) => t.status === 'done' || t.status === 'cancelled')
+
+  async function onArchive() {
+    await archive.mutateAsync(p.id)
+    notify('Project archived', 'success')
+  }
+
+  async function onAddNote() {
+    if (!note.trim()) return
+    await addNote.mutateAsync({ projectId: p.id, text: note.trim() })
+    setNote('')
+    notify('Note added', 'success')
+  }
+
+  return (
+    <Page>
+      <Link
+        to="/projects"
+        className="mb-3 inline-flex items-center gap-1 text-xs text-[--color-text-muted] hover:text-[--color-text]"
+      >
+        <ArrowLeft className="size-3.5" /> Projects
+      </Link>
+
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-semibold">{p.name}</h1>
+            <HealthBadge health={health.health} label={health.label} />
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[--color-text-muted]">
+            <Badge tone="neutral">{p.type}</Badge>
+            <Badge tone="neutral">{PROJECT_STATUS_LABEL[p.status]}</Badge>
+            <PriorityBadge priority={p.priority} />
+            {p.client && (
+              <Link to={`/clients/${p.client.id}`} className="hover:text-[--color-text]">
+                {p.client.name}
+              </Link>
+            )}
+            {p.deadline && <span>{dueLabel(p.deadline)}</span>}
+            <span>Active {relativeTime(p.last_activity_at)}</span>
+          </div>
+          {health.reasons.length > 0 && (
+            <p className="mt-1.5 text-xs text-[--color-text-muted]">{health.reasons.join(' · ')}</p>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button icon={<Pencil className="size-3.5" />} onClick={() => setEditing(true)}>
+            Edit
+          </Button>
+          <Button
+            icon={<Archive className="size-3.5" />}
+            onClick={onArchive}
+            loading={archive.isPending}
+            disabled={p.status === 'archived'}
+          >
+            Archive
+          </Button>
+        </div>
+      </div>
+
+      {p.description && (
+        <Card className="mb-4">
+          <CardBody className="text-sm whitespace-pre-wrap text-[--color-text-muted]">
+            {p.description}
+          </CardBody>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          <Card>
+            <CardHeader
+              title="Tasks"
+              count={openTasks.length}
+              action={
+                <Button
+                  size="sm"
+                  icon={<Plus className="size-3.5" />}
+                  onClick={() => setTaskModal({ open: true })}
+                >
+                  Add
+                </Button>
+              }
+            />
+            <div className="border-b border-[--color-border] p-3">
+              <QuickAddTask projectId={p.id} />
+            </div>
+            {tasks.isLoading ? (
+              <div className="p-3">
+                <SkeletonRows rows={4} />
+              </div>
+            ) : openTasks.length === 0 ? (
+              <EmptyState title="No open tasks" description="Add a task to get started." />
+            ) : (
+              openTasks.map((t) => (
+                <TaskRow key={t.id} task={t} onEdit={(task) => setTaskModal({ open: true, task })} />
+              ))
+            )}
+            {doneTasks.length > 0 && (
+              <details className="px-3 py-2">
+                <summary className="cursor-pointer text-xs text-[--color-text-muted]">
+                  {doneTasks.length} completed
+                </summary>
+                <div className="mt-1">
+                  {doneTasks.map((t) => (
+                    <TaskRow
+                      key={t.id}
+                      task={t}
+                      onEdit={(task) => setTaskModal({ open: true, task })}
+                    />
+                  ))}
+                </div>
+              </details>
+            )}
+          </Card>
+
+          <Card>
+            <CardHeader title="Activity" />
+            <ActivityTimeline
+              items={activity.data}
+              loading={activity.isLoading}
+              showProject={false}
+            />
+          </Card>
+        </div>
+
+        <Card className="h-fit">
+          <CardHeader title="Notes" />
+          <CardBody className="space-y-2">
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add a note to the activity log…"
+            />
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={onAddNote}
+              loading={addNote.isPending}
+              disabled={!note.trim()}
+            >
+              Add note
+            </Button>
+          </CardBody>
+        </Card>
+      </div>
+
+      <ProjectFormModal open={editing} onClose={() => setEditing(false)} project={p} />
+      <TaskFormModal
+        open={taskModal.open}
+        onClose={() => setTaskModal({ open: false })}
+        projectId={p.id}
+        task={taskModal.task}
+      />
+    </Page>
+  )
+}
