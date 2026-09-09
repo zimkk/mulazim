@@ -30,7 +30,7 @@ export default function Login() {
         await signIn(email, password)
       } else {
         await signUp(email, password, displayName || email.split('@')[0]!)
-        notify('Account created. Check your email if confirmation is required.', 'success')
+        notify('Welcome to Grid Manager', 'success')
       }
     } catch {
       /* error surfaced from store */

@@ -1,4 +1,4 @@
-/** Quick visual capture of key screens for review. node scripts/shots.mjs */
+/** Visual capture of key screens. node scripts/shots.mjs */
 import { readFileSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import puppeteer from 'puppeteer-core'
@@ -22,11 +22,15 @@ const page = await browser.newPage()
 await page.setViewport({ width: 1360, height: 900 })
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const shot = (n) => page.screenshot({ path: `${OUT}shot-${n}.png` })
-const type = async (sel, t) => {
-  await page.waitForSelector(sel)
-  await page.type(sel, t)
-}
+const byText = (sel, text) =>
+  page.waitForFunction(
+    (s, t) => [...document.querySelectorAll(s)].some((e) => e.textContent?.includes(t)),
+    { timeout: 15000 },
+    sel,
+    text,
+  )
 const clickText = async (sel, text) => {
+  await byText(sel, text)
   const h = await page.evaluateHandle(
     (s, t) => [...document.querySelectorAll(s)].find((e) => e.textContent?.includes(t)),
     sel,
@@ -36,63 +40,60 @@ const clickText = async (sel, text) => {
 }
 
 await page.goto(BASE, { waitUntil: 'networkidle2' })
-await page.waitForSelector('#root *')
 await clickText('button', "Don't have an account? Sign up")
-await page.waitForFunction(() => [...document.querySelectorAll('h1')].some((h) => h.textContent?.includes('Create your account')))
+await byText('h1', 'Create your account')
 const email = `gm-shots-${Date.now()}@example.com`
-await type('input[type="email"]', email)
-await type('input[type="password"]', 'Passw0rd!shots')
+await page.type('input[type="email"]', email)
+await page.type('input[type="password"]', 'Passw0rd!shots')
 await clickText('button', 'Sign up')
-await page.waitForFunction(() => location.hash === '#/' || document.body.innerText.includes('Good '), { timeout: 15000 })
-await sleep(1500)
+await byText('h1', 'Good ')
+await sleep(1200)
+await shot('01-onboarding')
 
-// seed a bit of data via the UI quick-add
-await sleep(500)
-await shot('01-dashboard-empty')
-
-await clickText('a', 'Projects')
-await sleep(400)
-await clickText('button', 'New project')
-await sleep(400)
-await type('#project-form input', 'Acme Website Revamp')
-await clickText('button[form="project-form"]', 'Create')
-await sleep(800)
-await clickText('a', 'Acme Website Revamp')
-await sleep(600)
-const q = await page.$('input[placeholder="Add a task and press Enter"]')
-for (const t of ['Design homepage', 'Wire up checkout', 'Fix mobile nav', 'Write copy']) {
-  await q.type(t)
-  await q.press('Enter')
-  await sleep(500)
-}
-await shot('02-project-detail')
+// seed via onboarding
+await clickText('button', 'Add sample data')
+await sleep(2500)
+await shot('02-dashboard')
 
 await clickText('a', 'Today')
-await sleep(600)
+await byText('h1', 'Today')
+await sleep(1200)
 await shot('03-today')
 
-await clickText('a', 'Settings')
-await sleep(400)
-await clickText('a', 'Appearance')
-await sleep(400)
-await shot('04-settings-appearance')
-await clickText('a', 'Notifications')
-await sleep(400)
-await shot('05-settings-notifications')
-await clickText('a', 'Workflow')
-await sleep(400)
-await shot('06-settings-workflow')
+await clickText('a', 'Projects')
+await byText('h1', 'Projects')
+await sleep(800)
+await clickText('a', 'Acme Website')
+await byText('h1', 'Acme Website')
+await sleep(1000)
+await shot('04-project-detail')
+await clickText('button', 'board')
+await sleep(900)
+await shot('05-board')
 
-// dark -> light
+await clickText('a', 'Review')
+await byText('h1', 'Weekly review')
+await sleep(1200)
+await shot('06-review')
+
+await clickText('a', 'Settings')
+await byText('h1', 'Settings')
 await clickText('a', 'Appearance')
-await sleep(300)
+await byText('h2', 'Appearance')
+await sleep(500)
+await shot('07-settings-appearance')
+
+// switch to light + violet
 await clickText('button', 'Light')
+await sleep(400)
+const violet = await page.$('button[aria-label="violet"]')
+if (violet) await violet.click()
 await sleep(500)
 await clickText('a', 'Dashboard')
-await sleep(600)
-await shot('07-dashboard-light')
+await byText('h1', 'Good ')
+await sleep(1200)
+await shot('08-dashboard-light-violet')
 
-// cleanup
 if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
   const { createClient } = await import('@supabase/supabase-js')
   const admin = createClient(env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
@@ -103,4 +104,4 @@ if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
   if (u) await admin.auth.admin.deleteUser(u.id)
 }
 await browser.close()
-console.log('shots written to .artifacts/')
+console.log('shots written')

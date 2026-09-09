@@ -40,7 +40,7 @@ export function Onboarding() {
         .insert([
           {
             user_id: userId,
-            client_id: client?.id,
+            client_id: client?.id ?? null,
             name: 'Acme Website',
             type: 'client',
             status: 'active',
@@ -49,26 +49,37 @@ export function Onboarding() {
           },
           {
             user_id: userId,
+            client_id: null,
             name: 'Personal — Blog',
             type: 'personal',
             status: 'active',
             priority: 'low',
+            deadline: null,
           },
         ])
         .select('id, name')
       const web = projects?.find((p) => p.name === 'Acme Website')
       const blog = projects?.find((p) => p.name === 'Personal — Blog')
-      if (web) {
-        await supabase.from('tasks').insert([
-          { user_id: userId, project_id: web.id, title: 'Design the homepage', priority: 'high', due_date: iso(-1), status: 'in_progress' },
-          { user_id: userId, project_id: web.id, title: 'Set up the CMS', priority: 'medium', due_date: iso(3) },
-          { user_id: userId, project_id: web.id, title: 'Wire up the contact form', priority: 'medium' },
-        ])
-      }
-      if (blog) {
-        await supabase.from('tasks').insert([
-          { user_id: userId, project_id: blog.id, title: 'Write "hello world" post', priority: 'low', due_date: iso(7) },
-        ])
+      // All task objects share the same shape so PostgREST bulk-insert is happy.
+      const task = (project_id: string, title: string, priority: string, due: string | null, status: string) => ({
+        user_id: userId,
+        project_id,
+        title,
+        priority,
+        due_date: due,
+        status,
+      })
+      const rows = []
+      if (web)
+        rows.push(
+          task(web.id, 'Design the homepage', 'high', iso(-1), 'in_progress'),
+          task(web.id, 'Set up the CMS', 'medium', iso(3), 'todo'),
+          task(web.id, 'Wire up the contact form', 'medium', null, 'todo'),
+        )
+      if (blog) rows.push(task(blog.id, 'Write "hello world" post', 'low', iso(7), 'todo'))
+      if (rows.length) {
+        const { error } = await supabase.from('tasks').insert(rows)
+        if (error) throw error
       }
       await qc.invalidateQueries()
       notify('Sample data added — explore, then delete it from Trash or Settings.', 'success')
