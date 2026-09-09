@@ -6,6 +6,8 @@ import { Badge, HealthBadge, PriorityBadge } from '@/components/ui/Badge'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
 import { QuickAddTask } from '@/components/tasks/QuickAddTask'
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline'
+import { Onboarding } from '@/components/Onboarding'
+import { useClients } from '@/lib/api/clients'
 import { useDashboard } from '@/lib/api/dashboard'
 import { useRecentActivity } from '@/lib/api/activity'
 import { displayNameOf, useProfile } from '@/lib/api/profile'
@@ -23,7 +25,14 @@ export default function Dashboard() {
   const d = useDashboard()
   const activity = useRecentActivity(12)
   const { data: projects } = useProjects()
+  const { data: clients } = useClients()
   const { workflow } = useSettings()
+  const showOnboarding =
+    !d.isLoading &&
+    projects !== undefined &&
+    clients !== undefined &&
+    projects.length === 0 &&
+    clients.length === 0
 
   const needsReview = (projects ?? []).filter(
     (p) =>
@@ -158,6 +167,8 @@ export default function Dashboard() {
         title={`${greeting()}, ${displayNameOf(profile, email)}`}
         subtitle="What needs your attention right now."
       />
+
+      {showOnboarding && <Onboarding />}
 
       <div className="mb-5">
         <QuickAddTask />

@@ -9,6 +9,7 @@ import { Badge, HealthBadge, PriorityBadge } from '@/components/ui/Badge'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
 import { useToast } from '@/components/Toast'
 import { TaskRow } from '@/components/tasks/TaskRow'
+import { TaskBoard } from '@/components/tasks/TaskBoard'
 import { TaskFormModal } from '@/components/tasks/TaskFormModal'
 import { QuickAddTask } from '@/components/tasks/QuickAddTask'
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline'
@@ -47,6 +48,7 @@ export default function ProjectDetail() {
 
   const [editing, setEditing] = useState(false)
   const [taskModal, setTaskModal] = useState<{ open: boolean; task?: Task }>({ open: false })
+  const [taskView, setTaskView] = useState<'list' | 'board'>('list')
   const [note, setNote] = useState('')
 
   useEffect(() => {
@@ -180,13 +182,31 @@ export default function ProjectDetail() {
               title="Tasks"
               count={openTasks.length}
               action={
-                <Button
-                  size="sm"
-                  icon={<Plus className="size-3.5" />}
-                  onClick={() => setTaskModal({ open: true })}
-                >
-                  Add
-                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="flex rounded-md border border-[--color-border] p-0.5 text-xs">
+                    {(['list', 'board'] as const).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => setTaskView(v)}
+                        className={
+                          'rounded px-2 py-0.5 capitalize ' +
+                          (taskView === v
+                            ? 'bg-[--color-accent] text-[--color-accent-fg]'
+                            : 'text-[--color-text-muted]')
+                        }
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                  <Button
+                    size="sm"
+                    icon={<Plus className="size-3.5" />}
+                    onClick={() => setTaskModal({ open: true })}
+                  >
+                    Add
+                  </Button>
+                </div>
               }
             />
             <div className="border-b border-[--color-border] p-3">
@@ -196,6 +216,11 @@ export default function ProjectDetail() {
               <div className="p-3">
                 <SkeletonRows rows={4} />
               </div>
+            ) : taskView === 'board' ? (
+              <TaskBoard
+                tasks={tasks.data ?? []}
+                onEdit={(task) => setTaskModal({ open: true, task })}
+              />
             ) : openTasks.length === 0 ? (
               <EmptyState title="No open tasks" description="Add a task to get started." />
             ) : (
@@ -203,7 +228,7 @@ export default function ProjectDetail() {
                 <TaskRow key={t.id} task={t} onEdit={(task) => setTaskModal({ open: true, task })} />
               ))
             )}
-            {doneTasks.length > 0 && (
+            {taskView === 'list' && doneTasks.length > 0 && (
               <details className="px-3 py-2">
                 <summary className="cursor-pointer text-xs text-[--color-text-muted]">
                   {doneTasks.length} completed

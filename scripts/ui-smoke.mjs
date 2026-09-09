@@ -179,6 +179,15 @@ try {
   await page.waitForFunction(() => !document.querySelector('#task-form'), { timeout: 10000 })
   await shot('04-task-added')
 
+  // --- Board view toggle ---
+  await clickText('button', 'board')
+  await byText('div, span', 'In progress')
+  const hasColumns = await page.evaluate(
+    () => ['To do', 'In progress', 'Blocked', 'Done'].every((l) => document.body.innerText.includes(l)),
+  )
+  ok('board view shows status columns', hasColumns)
+  await clickText('button', 'list')
+
   // --- Time tracking: start a timer on the task, see the pill, stop it ---
   {
     const startBtn = await page.$('button[aria-label="Start timer"]')
