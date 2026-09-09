@@ -43,7 +43,7 @@ export default function Login() {
       <Card className="w-full max-w-sm">
         <CardBody>
           <div className="mb-5 flex items-center gap-2">
-            <div className="size-6 rounded bg-[--color-accent]" />
+            <Logo className="size-6" />
             <span className="text-sm font-semibold">Grid Manager</span>
           </div>
           <h1 className="mb-1 text-base font-semibold">

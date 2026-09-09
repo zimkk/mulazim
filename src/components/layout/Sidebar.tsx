@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils/cn'
 import { useUiStore } from '@/stores/uiStore'
 import { UpdateManager } from '@/components/updates/UpdateManager'
+import { Logo } from '@/components/ui/Logo'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -41,7 +42,7 @@ export function Sidebar() {
         className="flex h-11 items-center gap-2 border-b border-[--color-border] px-3"
         data-tauri-drag-region
       >
-        <div className="size-5 shrink-0 rounded bg-[--color-accent]" />
+        <Logo className="size-5" />
         {!collapsed && <span className="text-sm font-semibold">Grid Manager</span>}
       </div>
 
