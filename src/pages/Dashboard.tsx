@@ -108,6 +108,12 @@ export default function Dashboard() {
             emptyTitle="No projects need attention"
           />
 
+          <TaskCard
+            title="In progress"
+            tasks={d.inProgressTasks}
+            emptyTitle="Nothing in progress"
+          />
+
           <Card className="lg:col-span-2">
             <CardHeader title="Recent activity" />
             <ActivityTimeline items={activity.data} loading={activity.isLoading} />
