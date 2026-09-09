@@ -12,6 +12,7 @@ const Dashboard = lazy(() => import('@/pages/Dashboard'))
 const Today = lazy(() => import('@/pages/Today'))
 const Upcoming = lazy(() => import('@/pages/Upcoming'))
 const AllTasks = lazy(() => import('@/pages/AllTasks'))
+const Calendar = lazy(() => import('@/pages/Calendar'))
 const Projects = lazy(() => import('@/pages/Projects'))
 const ProjectDetail = lazy(() => import('@/pages/ProjectDetail'))
 const Clients = lazy(() => import('@/pages/Clients'))
@@ -36,6 +37,7 @@ const router = createHashRouter([
       { path: 'today', element: <Today /> },
       { path: 'upcoming', element: <Upcoming /> },
       { path: 'tasks', element: <AllTasks /> },
+      { path: 'calendar', element: <Calendar /> },
       { path: 'projects', element: <Projects /> },
       { path: 'projects/:id', element: <ProjectDetail /> },
       { path: 'clients', element: <Clients /> },

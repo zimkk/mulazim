@@ -285,10 +285,20 @@ try {
   await byText('a, span', 'Northwind Ltd')
   ok('client created and listed', true)
 
+  // --- Calendar ---
+  await clickText('a', 'Calendar')
+  await byText('h1', 'Calendar')
+  const calGrid = await page.evaluate(
+    () => document.querySelectorAll('.grid-cols-7 > *').length >= 35,
+  )
+  ok('Calendar renders a month grid', calGrid)
+
   // --- Today / Upcoming / Trash pages load ---
   await clickText('a', 'Today')
   await byText('h1', 'Today')
   ok('Today view renders', true)
+  await byText('h2', 'Today’s plan')
+  ok('Today shows the daily-plan card', true)
   await clickText('a', 'Upcoming')
   await byText('h1', 'Upcoming')
   ok('Upcoming view renders', true)

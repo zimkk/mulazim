@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import {
   Activity,
   CalendarDays,
+  CalendarRange,
   ClipboardCheck,
   FolderKanban,
   ListChecks,
@@ -22,6 +23,7 @@ const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/today', label: 'Today', icon: Sun, end: false },
   { to: '/upcoming', label: 'Upcoming', icon: CalendarDays, end: false },
+  { to: '/calendar', label: 'Calendar', icon: CalendarRange, end: false },
   { to: '/tasks', label: 'All tasks', icon: ListChecks, end: false },
   { to: '/projects', label: 'Projects', icon: FolderKanban, end: false },
   { to: '/clients', label: 'Clients', icon: Users, end: false },
