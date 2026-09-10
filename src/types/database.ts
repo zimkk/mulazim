@@ -75,6 +75,10 @@ export interface Task {
   status: TaskStatus
   priority: Priority
   due_date: string | null
+  /** Optional clock time on due_date, "HH:MM:SS". NULL = all-day. */
+  due_time: string | null
+  /** Length of the scheduled block. Falls back to estimated_minutes. */
+  duration_minutes: number | null
   start_date: string | null
   completed_at: string | null
   estimated_minutes: number | null

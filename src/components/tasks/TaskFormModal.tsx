@@ -43,6 +43,7 @@ export function TaskFormModal({
   const [status, setStatus] = useState<TaskStatus>('todo')
   const [priority, setPriority] = useState<Priority>('medium')
   const [dueDate, setDueDate] = useState('')
+  const [dueTime, setDueTime] = useState('')
   const [startDate, setStartDate] = useState('')
   const [estimate, setEstimate] = useState('')
   const [recurrence, setRecurrence] = useState<Recurrence>('none')
@@ -79,6 +80,7 @@ export function TaskFormModal({
     setStatus(task?.status ?? 'todo')
     setPriority(task?.priority ?? 'medium')
     setDueDate(toDateInputValue(task?.due_date))
+    setDueTime(task?.due_time ? task.due_time.slice(0, 5) : '')
     setStartDate(toDateInputValue(task?.start_date))
     setEstimate(task?.estimated_minutes ? String(task.estimated_minutes) : '')
     setRecurrence(task?.recurrence ?? 'none')
@@ -103,6 +105,8 @@ export function TaskFormModal({
       description: description.trim() || null,
       priority,
       due_date: dueDate || null,
+      // A time without a date is meaningless, so it is dropped with the date.
+      due_time: dueDate && dueTime ? `${dueTime}:00` : null,
       start_date: startDate || null,
       estimated_minutes: estimate ? Number(estimate) : null,
       recurrence,
@@ -187,8 +191,9 @@ export function TaskFormModal({
           />
         </FormRow>
 
-        {/* The two fields that actually drive the dashboard queue. */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* The two fields that actually drive the dashboard queue, plus an
+            optional time — leave it blank and the task stays all-day. */}
+        <div className="grid grid-cols-[1fr_7.5rem] gap-3">
           <FormRow label="Due date">
             <Input
               name="due_date"
@@ -197,6 +202,19 @@ export function TaskFormModal({
               onChange={(e) => setDueDate(e.target.value)}
             />
           </FormRow>
+          <FormRow label="Time (optional)">
+            <Input
+              name="due_time"
+              type="time"
+              value={dueTime}
+              disabled={!dueDate}
+              title={dueDate ? 'Leave blank for an all-day task' : 'Pick a due date first'}
+              onChange={(e) => setDueTime(e.target.value)}
+            />
+          </FormRow>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           <FormRow label="Priority">
             <Select
               name="priority"

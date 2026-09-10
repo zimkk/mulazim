@@ -13,6 +13,8 @@ export interface TaskInput {
   status?: TaskStatus
   priority?: Priority
   due_date?: string | null
+  due_time?: string | null
+  duration_minutes?: number | null
   start_date?: string | null
   estimated_minutes?: number | null
   recurrence?: Recurrence

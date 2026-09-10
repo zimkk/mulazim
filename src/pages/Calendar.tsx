@@ -26,6 +26,7 @@ import { EmptyState, SkeletonRows } from '@/components/ui/States'
 import { cn } from '@/lib/utils/cn'
 import { TaskRow } from '@/components/tasks/TaskRow'
 import { TaskFormModal } from '@/components/tasks/TaskFormModal'
+import { TimeGrid } from '@/components/calendar/TimeGrid'
 import { useAllTasks, useUpdateTask } from '@/lib/api/tasks'
 import { useProjects } from '@/lib/api/projects'
 import { useTags, useTaskTagMap } from '@/lib/api/tags'
@@ -35,7 +36,7 @@ import { isOverdue } from '@/lib/utils/dates'
 import { PRIORITIES } from '@/lib/constants'
 import type { Priority, Task, TaskWithProject } from '@/types/database'
 
-type View = 'month' | 'week' | 'list'
+type View = 'month' | 'week' | 'day' | 'list'
 
 /**
  * Tasks carry a due *date*, not a start/end time, so there is no hour grid
@@ -103,19 +104,41 @@ export default function Calendar() {
 
   function shift(direction: -1 | 1) {
     setCursor((c) =>
-      view === 'month' ? addMonths(c, direction) : addWeeks(c, direction),
+      view === 'month'
+        ? addMonths(c, direction)
+        : view === 'day'
+          ? addDays(c, direction)
+          : addWeeks(c, direction),
     )
   }
 
-  /** Drop a task on a day → reschedule it there. */
-  function reschedule(dayKey: string) {
-    const task = filtered.find((t) => t.id === dragId)
+  /**
+   * Reschedule a task. `time` null means all-day; dropping on the hour grid
+   * supplies a time, dropping on a month cell or the all-day row clears it.
+   */
+  function reschedule(taskId: string, dayKey: string, time: string | null) {
+    const task = (data ?? []).find((t) => t.id === taskId)
     setDragId(null)
     setOverDay(null)
-    if (!task || task.due_date?.slice(0, 10) === dayKey) return
+    if (!task) return
+    const unchanged =
+      task.due_date?.slice(0, 10) === dayKey && (task.due_time ?? null) === time
+    if (unchanged) return
     update.mutate(
-      { id: task.id, projectId: task.project_id, previousStatus: task.status, due_date: dayKey },
-      { onSuccess: () => notify(`"${task.title}" moved to ${format(parseISO(dayKey), 'MMM d')}`, 'success') },
+      {
+        id: task.id,
+        projectId: task.project_id,
+        previousStatus: task.status,
+        due_date: dayKey,
+        due_time: time,
+      },
+      {
+        onSuccess: () =>
+          notify(
+            `"${task.title}" → ${format(parseISO(dayKey), 'MMM d')}${time ? ` at ${time.slice(0, 5)}` : ''}`,
+            'success',
+          ),
+      },
     )
   }
 
@@ -125,10 +148,12 @@ export default function Calendar() {
           start: startOfWeek(startOfMonth(cursor), weekOpts),
           end: endOfWeek(endOfMonth(cursor), weekOpts),
         })
-      : eachDayOfInterval({
-          start: startOfWeek(cursor, weekOpts),
-          end: endOfWeek(cursor, weekOpts),
-        })
+      : view === 'day'
+        ? [cursor]
+        : eachDayOfInterval({
+            start: startOfWeek(cursor, weekOpts),
+            end: endOfWeek(cursor, weekOpts),
+          })
 
   const weekdayLabels = days.slice(0, 7).map((d) => format(d, 'EEE'))
   const selectedKey = format(selected, 'yyyy-MM-dd')
@@ -139,7 +164,9 @@ export default function Calendar() {
       ? format(cursor, 'MMMM yyyy')
       : view === 'week'
         ? `Week of ${format(startOfWeek(cursor, weekOpts), 'MMM d')}`
-        : 'Scheduled'
+        : view === 'day'
+          ? format(cursor, 'EEEE, d MMM yyyy')
+          : 'Scheduled'
 
   return (
     <Page>
@@ -154,13 +181,14 @@ export default function Calendar() {
                 // Re-anchor on switch: a month cursor sits on the 1st, so
                 // flipping to Week would otherwise show the week containing the
                 // 1st rather than the week you were actually looking at.
-                if (v === 'week') setCursor(selected)
+                if (v === 'week' || v === 'day') setCursor(selected)
                 if (v === 'month') setCursor(startOfMonth(selected))
                 setView(v)
               }}
               options={[
                 { value: 'month', label: 'Month' },
                 { value: 'week', label: 'Week' },
+                { value: 'day', label: 'Day' },
                 { value: 'list', label: 'List' },
               ]}
             />
@@ -229,6 +257,10 @@ export default function Calendar() {
         <SkeletonRows rows={8} />
       ) : view === 'list' ? (
         <ListView tasks={filtered} onEdit={setEdit} />
+      ) : view === 'week' || view === 'day' ? (
+        <Card className="overflow-hidden">
+          <TimeGrid days={days} byDay={byDay} onOpen={setEdit} onReschedule={reschedule} />
+        </Card>
       ) : (
         <div className={cn('grid gap-4', view === 'month' && 'lg:grid-cols-[1fr_320px]')}>
           <Card className="overflow-hidden">
@@ -243,10 +275,10 @@ export default function Calendar() {
               {days.map((d) => {
                 const key = format(d, 'yyyy-MM-dd')
                 const dayTasks = byDay.get(key) ?? []
-                const outside = view === 'month' && !isSameMonth(d, cursor)
+                const outside = !isSameMonth(d, cursor)
                 const isSel = isSameDay(d, selected)
                 const isDropTarget = overDay === key
-                const cap = view === 'week' ? 8 : 3
+                const cap = 3
                 return (
                   <button
                     key={key}
@@ -258,11 +290,11 @@ export default function Calendar() {
                     onDragLeave={() => setOverDay((k) => (k === key ? null : k))}
                     onDrop={(e) => {
                       e.preventDefault()
-                      reschedule(key)
+                      if (dragId) reschedule(dragId, key, null)
                     }}
                     className={cn(
                       'relative flex flex-col items-start gap-1 border-b border-r border-[var(--color-border)] p-1.5 text-left transition-colors',
-                      view === 'week' ? 'min-h-64' : 'min-h-24',
+                      'min-h-24',
                       '[&:nth-child(7n)]:border-r-0 hover:bg-[var(--color-surface-2)]/60',
                       outside && 'bg-[var(--color-surface-2)]/30',
                       isSel && 'bg-[var(--color-accent-soft)] ring-1 ring-inset ring-[var(--color-accent)]',
