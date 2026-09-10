@@ -1,8 +1,12 @@
-# Mulazim
+# Mulazim — open-source desktop project & task tracker
 
-A personal, cross-platform desktop project & task tracker. One place to see every
-active piece of work — freelance clients, company tasks, personal projects — so
-nothing gets neglected.
+A free, cross-platform **desktop app for macOS, Linux and Windows** that keeps
+every active piece of work in one place — freelance clients, company tasks,
+personal side-projects — so nothing gets neglected.
+
+Native app, not a browser tab: built with **Tauri 2** and **Rust**, a **React 19**
+front end, and **Supabase** (Postgres) for sync, so your work follows you to any
+computer you sign in from.
 
 [![Latest release](https://img.shields.io/github/v/release/zimkk/mulazim?label=download&style=for-the-badge)](https://github.com/zimkk/mulazim/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](./LICENSE)
@@ -45,11 +49,11 @@ does. See [`RELEASE.md`](./RELEASE.md) for what signing would involve.
 
 | Dashboard (dark) | Dashboard (light) |
 |---|---|
-| ![Dashboard, dark theme](./docs/screenshots/dashboard-dark.png) | ![Dashboard, light theme with the violet accent](./docs/screenshots/dashboard-light.png) |
+| ![Mulazim dashboard in dark mode — overdue, due-soon and in-progress counters above a recommended-focus queue](./docs/screenshots/dashboard-dark.png) | ![The same dashboard in light mode with the violet accent](./docs/screenshots/dashboard-light.png) |
 
 | Project detail | Sign in |
 |---|---|
-| ![Project detail with tasks, notes and activity](./docs/screenshots/project-detail.png) | ![Sign-in screen](./docs/screenshots/login.png) |
+| ![Project detail: task list, kanban toggle, completion ring, notes and activity timeline](./docs/screenshots/project-detail.png) | ![Mulazim sign-in screen](./docs/screenshots/login.png) |
 
 ## Features
 
@@ -179,6 +183,43 @@ supabase/migrations/  versioned schema
 docs/screenshots/     images used by this README
 .github/workflows/    3-OS release pipeline
 ```
+
+## FAQ
+
+**Is it free?**
+Yes — free and open source under the MIT licence. No tiers, no paywall.
+
+**Do I need to install anything else?**
+No. The Windows installer bundles WebView2; macOS and Linux use the system
+webview. There is no Node, Rust or Docker to set up unless you build from source.
+
+**Where is my data stored?**
+In a Supabase (Postgres) project in the cloud, which is what lets one account
+sync across machines. Accounts are isolated by Postgres Row Level Security — see
+[`SECURITY.md`](./SECURITY.md). A self-built copy can point at your own Supabase
+project instead.
+
+**Does it work offline?**
+It reads from cache and tells you when you are offline, but it is cloud-first:
+changes need a connection to sync. It is not a local-first/CRDT app.
+
+**How is it different from Todoist, Things or Notion?**
+Narrower on purpose. Instead of a general task list, or a database you have to
+design yourself, it is built around one question — *what needs my attention right
+now?* — and answers it deterministically from due dates, priority, project
+staleness and review cadence. Clients and projects are first-class, which suits
+freelance and multi-project work.
+
+**Why the name?**
+مُلازِم (mulazim) — Arabic/Urdu for one who stays close by; a constant companion.
+
+**How do updates work?**
+The app checks GitHub Releases on launch and updates itself. Installers carry a
+minisign signature the updater verifies before applying anything.
+
+**Can I contribute?**
+Yes — issues and pull requests are welcome. See
+[Building from source](#building-from-source).
 
 ## Credits
 
