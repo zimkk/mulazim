@@ -1,15 +1,29 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Download, RefreshCw } from 'lucide-react'
+import { CheckCircle2, Download, Info, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Progress } from '@/components/ui/Progress'
+import { appVersion, openExternal } from '@/lib/tauri'
 
-type Phase = 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error' | 'uptodate'
+const REPO_URL = 'https://github.com/zimkk/mulazim'
+
+type Phase =
+  | 'idle'
+  | 'checking'
+  | 'available'
+  | 'downloading'
+  | 'ready'
+  | 'error'
+  | 'uptodate'
+  | 'unsupported'
 
 interface State {
   phase: Phase
+  /** The version offered by the update server, when one is newer. */
   version?: string
   progress?: number
   message?: string
+  /** When the last check completed — proof that anything happened at all. */
+  checkedAt?: Date
 }
 
 /**
@@ -18,10 +32,19 @@ interface State {
  */
 export function UpdateManager({ compact = false }: { compact?: boolean }) {
   const [state, setState] = useState<State>({ phase: 'idle' })
+  const [current, setCurrent] = useState(__APP_VERSION__)
+  useEffect(() => {
+    void appVersion().then(setCurrent)
+  }, [])
 
   const check = useCallback(async (silent: boolean) => {
+    // A browser or `tauri dev` build has no updater. Saying "up to date" here
+    // was actively misleading: nothing had been checked.
     if (!('__TAURI_INTERNALS__' in window)) {
-      setState({ phase: 'uptodate', message: 'Updates are only available in the desktop app.' })
+      setState({
+        phase: 'unsupported',
+        message: 'Updates only work in an installed build — this is running from source.',
+      })
       return
     }
     try {
@@ -29,19 +52,18 @@ export function UpdateManager({ compact = false }: { compact?: boolean }) {
       const { check } = await import('@tauri-apps/plugin-updater')
       const update = await check()
       if (!update) {
-        setState({ phase: 'uptodate' })
+        setState({ phase: 'uptodate', checkedAt: new Date() })
         return
       }
-      setState({ phase: 'available', version: update.version })
+      setState({ phase: 'available', version: update.version, checkedAt: new Date() })
 
       // Auto-advance to install only when the user explicitly clicks.
       ;(window as unknown as { __gm_update?: typeof update }).__gm_update = update
     } catch (err) {
-      if (!silent) {
-        setState({ phase: 'error', message: err instanceof Error ? err.message : String(err) })
-      } else {
-        setState({ phase: 'idle' })
-      }
+      // Even a silent startup check should leave a trace; a permanently blank
+      // panel is indistinguishable from a check that never ran.
+      const message = err instanceof Error ? err.message : String(err)
+      setState(silent ? { phase: 'idle', message } : { phase: 'error', message })
     }
   }, [])
 
@@ -101,27 +123,59 @@ export function UpdateManager({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <div className="space-y-2 text-sm">
-      <div className="flex items-center gap-2">
+    <div className="space-y-3 text-sm">
+      {/* Always state the installed version. "Up to date" with nothing to
+          compare it against is unfalsifiable — you cannot tell a successful
+          check from one that silently did nothing. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[var(--color-text-muted)]">Installed version</span>
+        <span className="rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 font-mono text-xs ring-1 ring-inset ring-[var(--color-border)]">
+          {current}
+        </span>
         <Button
           size="sm"
+          className="ml-auto"
           onClick={() => check(false)}
           loading={state.phase === 'checking'}
           icon={<RefreshCw className="size-3.5" />}
         >
           Check for updates
         </Button>
-        {state.phase === 'uptodate' && (
-          <span className="text-xs text-[var(--color-text-muted)]">
-            {state.message ?? 'You are on the latest version.'}
-          </span>
-        )}
       </div>
+
+      {state.phase === 'uptodate' && (
+        <p className="flex items-center gap-2 text-xs text-[var(--color-healthy)]">
+          <CheckCircle2 className="size-3.5 shrink-0" />
+          {current} is the latest version
+          {state.checkedAt && (
+            <span className="text-[var(--color-text-subtle)]">
+              · checked {state.checkedAt.toLocaleTimeString()}
+            </span>
+          )}
+        </p>
+      )}
+
+      {state.phase === 'unsupported' && (
+        <div className="flex items-start gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]/50 p-3 text-xs text-[var(--color-text-muted)]">
+          <Info className="mt-px size-3.5 shrink-0" />
+          <span>
+            {state.message} Install a build from{' '}
+            <button
+              onClick={() => void openExternal(`${REPO_URL}/releases/latest`)}
+              className="text-[var(--color-accent)] hover:underline"
+            >
+              the latest release
+            </button>{' '}
+            to use self-updating.
+          </span>
+        </div>
+      )}
 
       {state.phase === 'available' && (
         <div className="rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent-soft)] p-3.5">
           <p className="mb-2.5 text-sm">
-            Update available — <strong>version {state.version}</strong>
+            Update available — <strong>{state.version}</strong>{' '}
+            <span className="text-[var(--color-text-muted)]">(you have {current})</span>
           </p>
           <Button
             variant="primary"
@@ -147,8 +201,15 @@ export function UpdateManager({ compact = false }: { compact?: boolean }) {
 
       {state.phase === 'error' && (
         <div className="rounded-xl border border-[var(--color-stale)]/40 bg-[var(--color-stale)]/5 p-3.5 text-xs text-[var(--color-stale)]">
-          Update failed: {state.message}. Your current version keeps working — try again later.
+          Couldn’t check for updates: {state.message}. Your current version keeps working.
         </div>
+      )}
+
+      {/* A silent startup failure used to leave the panel blank forever. */}
+      {state.phase === 'idle' && state.message && (
+        <p className="text-xs text-[var(--color-text-subtle)]">
+          Last check didn’t complete ({state.message}). Try again above.
+        </p>
       )}
     </div>
   )
