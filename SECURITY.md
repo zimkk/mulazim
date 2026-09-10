@@ -33,6 +33,17 @@ staying current is the default.
 - Builds are **not** yet Authenticode/Apple-notarized, so the OS will warn on
   first launch. See [`RELEASE.md`](./RELEASE.md).
 
+## Known advisories with no available fix
+
+**`glib` < 0.20 — `VariantStrIter` unsoundness (RUSTSEC, moderate).**
+Linux builds only. `glib` is pinned to the 0.18 line by `gtk` 0.18, which
+`tauri` itself depends on, so there is no version Cargo can resolve to until
+Tauri moves to gtk-rs 0.20. Neither this app nor its dependencies call
+`glib::VariantStrIter`, and the issue is unsoundness (potential UB if that
+iterator is misused) rather than a remotely reachable vulnerability. Dependabot
+is configured to stop retrying it; this will be picked up with the next Tauri
+upgrade.
+
 ## Scope
 
 In scope: anything letting one account reach another's data, bypass RLS,

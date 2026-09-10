@@ -19,6 +19,11 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    # glib is pinned to 0.18 by gtk 0.18, which Tauri itself requires, so no
+    # bump Dependabot proposes can resolve — it only retries and fails. Revisit
+    # when Tauri moves to the gtk-rs 0.20 line.
+    ignore:
+      - dependency-name: glib
 
   - package-ecosystem: github-actions
     directory: /
