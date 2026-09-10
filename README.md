@@ -4,11 +4,42 @@ A personal, cross-platform desktop project & task tracker. One place to see ever
 active piece of work — freelance clients, company tasks, personal projects — so
 nothing gets neglected.
 
-Built with **Tauri 2 · Rust · React 19 · TypeScript · Tailwind CSS v4 · Motion ·
-Zustand · TanStack Query · Supabase (Auth + Postgres + RLS)**. Ships signed,
-self-updating installers for macOS, Linux and Windows via GitHub Actions.
+[![Latest release](https://img.shields.io/github/v/release/zimkk/mulazim?label=download&style=for-the-badge)](https://github.com/zimkk/mulazim/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](./LICENSE)
 
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full design.
+## Download
+
+### **[⬇ Get the latest release](https://github.com/zimkk/mulazim/releases/latest)**
+
+Pick the file for your system — no build step, no toolchain, nothing to
+configure. Create an account on first launch and your work syncs to every
+device you sign in from.
+
+| OS | Download | Notes |
+|----|----------|-------|
+| **Windows** | `*_x64-setup.exe` *(recommended)* | Installer lets you choose language, install for just you or everyone, the folder, and whether to add a desktop icon. WebView2 is bundled. |
+| **Windows** *(alt)* | `*_x64_en-US.msi` | For managed/enterprise deployment. |
+| **macOS** | `*_universal.dmg` | One build for Apple silicon and Intel. |
+| **Linux — Debian/Ubuntu** | `*_amd64.deb` | `sudo apt install ./Grid*.deb` |
+| **Linux — Fedora/RHEL** | `*.x86_64.rpm` | `sudo dnf install ./Grid*.rpm` |
+| **Linux — anything else** | `*.AppImage` | `chmod +x` and run. |
+
+Once installed the app checks for updates on launch and updates itself — you
+only download manually this one time.
+
+<details>
+<summary><b>Seeing a security warning on first launch?</b></summary>
+
+These builds are not yet signed with a paid code-signing certificate, so:
+
+- **Windows** — SmartScreen says *"unknown publisher"*. Click **More info →
+  Run anyway**.
+- **macOS** — Gatekeeper blocks it. Right-click the app → **Open**, then
+  confirm; or allow it under System Settings → Privacy & Security.
+
+Both are the OS asking about the *certificate*, not about anything the app
+does. See [`RELEASE.md`](./RELEASE.md) for what signing would involve.
+</details>
 
 ## Screenshots
 
@@ -36,24 +67,17 @@ See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full design.
 - Soft-delete + Trash, JSON/CSV/Markdown export, JSON import
 - Self-updating; multi-device via a single cloud account
 
-## Design system
+---
 
-The UI is built on CSS custom properties declared in Tailwind v4's `@theme`
-block (`src/index.css`): a neutral scale, an accent ramp, semantic health
-colours, and elevation/radius scales. Theme, accent, density and font size are
-attributes on `<html>` (`.dark`, `data-accent`, `data-density`,
-`data-font-size`), so a preference change restyles the whole app without a
-re-render.
+# Building from source
 
-Animation lives in [`src/lib/motion.ts`](./src/lib/motion.ts) — shared spring and
-easing presets used for modals, list stagger, page transitions and count-up
-figures. Every animation is suppressed when the user enables *Reduce motion* or
-their OS reports `prefers-reduced-motion`.
+**You don't need any of this to use the app** — [download a
+release](https://github.com/zimkk/mulazim/releases/latest) instead. Read on only
+if you want to contribute, or run the app against your own Supabase backend.
 
-> **Note on Tailwind v4:** reference theme variables as
-> `bg-[var(--color-accent)]`, never `bg-[--color-accent]`. The latter compiles to
-> the literal `background-color: --color-accent`, which browsers discard
-> silently — the class appears to work but paints nothing.
+Built with **Tauri 2 · Rust · React 19 · TypeScript · Tailwind CSS v4 · Motion ·
+Zustand · TanStack Query · Supabase (Auth + Postgres + RLS)**.
+See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full design.
 
 ## Prerequisites
 
@@ -84,6 +108,31 @@ npm run dev          # frontend in a browser (Supabase works; no native APIs)
 npm run tauri dev    # full desktop app
 npm run tauri build  # optimized binary + installer for the current OS
 ```
+
+## Design system
+
+The UI is built on CSS custom properties declared in Tailwind v4's `@theme`
+block (`src/index.css`): a neutral scale, an accent ramp, semantic health
+colours, and elevation/radius scales. Theme, accent, density and font size are
+attributes on `<html>` (`.dark`, `data-accent`, `data-density`,
+`data-font-size`), so a preference change restyles the whole app without a
+re-render.
+
+Animation lives in [`src/lib/motion.ts`](./src/lib/motion.ts) — shared spring and
+easing presets for modals, toasts, the command palette and count-up figures.
+Every animation is suppressed when the user enables *Reduce motion* or their OS
+reports `prefers-reduced-motion`.
+
+Motion is deliberately kept to bounded, one-shot cases. The app runs inside
+WebKitGTK / WebView2, often on a software compositor, where `backdrop-filter`,
+large gradients on a scroll container, per-row list animations and shared-layout
+(`layoutId`) transitions are far more expensive than in Chromium — they made the
+whole window feel laggy and are not used.
+
+> **Note on Tailwind v4:** reference theme variables as
+> `bg-[var(--color-accent)]`, never `bg-[--color-accent]`. The latter compiles to
+> the literal `background-color: --color-accent`, which browsers discard
+> silently — the class appears to work but paints nothing.
 
 ## Quality gates
 
