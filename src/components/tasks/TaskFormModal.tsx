@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Plus, X } from 'lucide-react'
+import { ChevronDown, Plus, Sparkles, X } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { FormRow, Input, Select, Textarea } from '@/components/ui/Field'
 import { Badge } from '@/components/ui/Badge'
 import { useToast } from '@/components/Toast'
-import { useCreateTask, useDeleteTask, useUpdateTask } from '@/lib/api/tasks'
+import { useAllTasks, useCreateTask, useDeleteTask, useUpdateTask } from '@/lib/api/tasks'
 import { useCreateTag, useSetTaskTags, useTags, useTaskTagMap } from '@/lib/api/tags'
 import { useSubtaskMutations, useSubtasks } from '@/lib/api/subtasks'
 import { PRIORITIES, TASK_STATUSES, TASK_STATUS_LABEL } from '@/lib/constants'
 import { RECURRENCE_LABEL } from '@/lib/utils/recurrence'
 import { toDateInputValue } from '@/lib/utils/dates'
+import { formatMinutes, suggestEstimate } from '@/lib/utils/estimation'
+import { cn } from '@/lib/utils/cn'
 import type { Priority, Recurrence, Task, TaskStatus } from '@/types/database'
 
 const RECURRENCES: Recurrence[] = ['none', 'daily', 'weekdays', 'weekly', 'biweekly', 'monthly']
@@ -47,6 +49,23 @@ export function TaskFormModal({
   const [recurrenceUntil, setRecurrenceUntil] = useState('')
   const [tagIds, setTagIds] = useState<string[]>([])
   const [newTag, setNewTag] = useState('')
+  /**
+   * Advanced fields start collapsed. Creating a task should be title + when +
+   * how important; everything else is opt-in. When editing, the section opens
+   * automatically if any of those fields already carry a value, so nothing in
+   * use is ever hidden behind a chevron.
+   */
+  const [showMore, setShowMore] = useState(false)
+
+  // History-based estimate, from what similar finished work actually took.
+  const { data: allTasks } = useAllTasks(true)
+  const estimateHint = useMemo(
+    () =>
+      estimate
+        ? null
+        : suggestEstimate(allTasks ?? [], { projectId, tagIds, tagMap }),
+    [allTasks, projectId, tagIds, tagMap, estimate],
+  )
 
   const initialTagIds = useMemo(
     () => (task ? (tagMap.get(task.id) ?? []).map((t) => t.id) : []),
@@ -65,6 +84,16 @@ export function TaskFormModal({
     setRecurrence(task?.recurrence ?? 'none')
     setRecurrenceUntil(toDateInputValue(task?.recurrence_until))
     setTagIds(initialTagIds)
+    setShowMore(
+      Boolean(
+        task &&
+          (task.start_date ||
+            task.estimated_minutes ||
+            (task.recurrence && task.recurrence !== 'none') ||
+            task.description ||
+            initialTagIds.length),
+      ),
+    )
   }, [open, task, initialTagIds])
 
   async function onSubmit(e: FormEvent) {
@@ -148,21 +177,32 @@ export function TaskFormModal({
     >
       <form id="task-form" onSubmit={onSubmit} className="space-y-3">
         <FormRow label="Title *">
-          <Input required autoFocus value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Input
+            name="title"
+            required
+            autoFocus
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="What needs doing?"
+          />
         </FormRow>
 
-        <div className="grid grid-cols-3 gap-3">
-          <FormRow label="Status">
-            <Select value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)}>
-              {TASK_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {TASK_STATUS_LABEL[s]}
-                </option>
-              ))}
-            </Select>
+        {/* The two fields that actually drive the dashboard queue. */}
+        <div className="grid grid-cols-2 gap-3">
+          <FormRow label="Due date">
+            <Input
+              name="due_date"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
           </FormRow>
           <FormRow label="Priority">
-            <Select value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
+            <Select
+              name="priority"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as Priority)}
+            >
               {PRIORITIES.map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -170,98 +210,156 @@ export function TaskFormModal({
               ))}
             </Select>
           </FormRow>
-          <FormRow
-            label={
-              task?.actual_minutes
-                ? `Estimate (min) · ${task.actual_minutes}m tracked`
-                : 'Estimate (min)'
-            }
+        </div>
+
+        {/* Surfaced only when there is real history to draw on, and only while
+            the field is empty — a suggestion, never an auto-filled value. */}
+        {estimateHint && (
+          <button
+            type="button"
+            onClick={() => {
+              setEstimate(String(estimateHint.minutes))
+              setShowMore(true)
+            }}
+            className="flex w-full items-center gap-2 rounded-lg border border-[var(--color-accent)]/30 bg-[var(--color-accent-soft)] px-3 py-2 text-left text-xs transition-colors hover:brightness-105"
           >
-            <Input
-              type="number"
-              min={0}
-              step={15}
-              value={estimate}
-              onChange={(e) => setEstimate(e.target.value)}
-            />
-          </FormRow>
-        </div>
+            <Sparkles className="size-3.5 shrink-0 text-[var(--color-accent)]" />
+            <span className="text-[var(--color-text)]">
+              Similar work took about{' '}
+              <strong>{formatMinutes(estimateHint.minutes)}</strong>
+            </span>
+            <span className="ml-auto shrink-0 text-[var(--color-text-subtle)]">
+              {estimateHint.basis} · use it
+            </span>
+          </button>
+        )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <FormRow label="Start date">
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          </FormRow>
-          <FormRow label="Due date">
-            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-          </FormRow>
-        </div>
+        <button
+          type="button"
+          onClick={() => setShowMore((v) => !v)}
+          aria-expanded={showMore}
+          className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
+        >
+          <ChevronDown className={cn('size-3.5 transition-transform', showMore && 'rotate-180')} />
+          {showMore ? 'Fewer options' : 'More options'}
+        </button>
 
-        <div className="grid grid-cols-2 gap-3">
-          <FormRow label="Repeat">
-            <Select
-              value={recurrence}
-              onChange={(e) => setRecurrence(e.target.value as Recurrence)}
-            >
-              {RECURRENCES.map((r) => (
-                <option key={r} value={r}>
-                  {RECURRENCE_LABEL[r]}
-                </option>
-              ))}
-            </Select>
-          </FormRow>
-          {recurrence !== 'none' && (
-            <FormRow label="Repeat until (optional)">
-              <Input
-                type="date"
-                value={recurrenceUntil}
-                onChange={(e) => setRecurrenceUntil(e.target.value)}
+        {showMore && (
+          <div className="space-y-3 border-t border-[var(--color-border)] pt-3">
+            <div className="grid grid-cols-3 gap-3">
+              <FormRow label="Status">
+                <Select
+                  name="status"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as TaskStatus)}
+                >
+                  {TASK_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {TASK_STATUS_LABEL[s]}
+                    </option>
+                  ))}
+                </Select>
+              </FormRow>
+              <FormRow label="Start date">
+                <Input
+                  name="start_date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </FormRow>
+              <FormRow
+                label={
+                  task?.actual_minutes
+                    ? `Estimate (min) · ${task.actual_minutes}m tracked`
+                    : 'Estimate (min)'
+                }
+              >
+                <Input
+                  name="estimate"
+                  type="number"
+                  min={0}
+                  step={15}
+                  value={estimate}
+                  onChange={(e) => setEstimate(e.target.value)}
+                />
+              </FormRow>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <FormRow label="Repeat">
+                <Select
+                  name="recurrence"
+                  value={recurrence}
+                  onChange={(e) => setRecurrence(e.target.value as Recurrence)}
+                >
+                  {RECURRENCES.map((r) => (
+                    <option key={r} value={r}>
+                      {RECURRENCE_LABEL[r]}
+                    </option>
+                  ))}
+                </Select>
+              </FormRow>
+              {recurrence !== 'none' && (
+                <FormRow label="Repeat until (optional)">
+                  <Input
+                    name="recurrence_until"
+                    type="date"
+                    value={recurrenceUntil}
+                    onChange={(e) => setRecurrenceUntil(e.target.value)}
+                  />
+                </FormRow>
+              )}
+            </div>
+
+            <FormRow label="Tags">
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap gap-1.5">
+                  {(allTags ?? []).map((t) => (
+                    <button
+                      type="button"
+                      key={t.id}
+                      onClick={() => toggleTag(t.id)}
+                      className={cn(
+                        'rounded-full px-2 py-0.5 text-xs transition-colors',
+                        tagIds.includes(t.id)
+                          ? 'bg-[var(--color-accent)] text-[var(--color-accent-fg)]'
+                          : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
+                      )}
+                    >
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        void addTag()
+                      }
+                    }}
+                    placeholder="Add or create a tag"
+                    className="h-8"
+                  />
+                  <Button type="button" size="sm" icon={<Plus className="size-3.5" />} onClick={addTag}>
+                    Add
+                  </Button>
+                </div>
+              </div>
+            </FormRow>
+
+            <FormRow label="Description">
+              <Textarea
+                name="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
               />
             </FormRow>
-          )}
-        </div>
-
-        <FormRow label="Tags">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap gap-1.5">
-              {(allTags ?? []).map((t) => (
-                <button
-                  type="button"
-                  key={t.id}
-                  onClick={() => toggleTag(t.id)}
-                  className={
-                    'rounded px-1.5 py-0.5 text-xs ' +
-                    (tagIds.includes(t.id)
-                      ? 'bg-[var(--color-accent)] text-[var(--color-accent-fg)]'
-                      : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)]')
-                  }
-                >
-                  {t.name}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    void addTag()
-                  }
-                }}
-                placeholder="Add or create a tag"
-                className="h-8"
-              />
-              <Button type="button" size="sm" icon={<Plus className="size-3.5" />} onClick={addTag}>
-                Add
-              </Button>
-            </div>
           </div>
-        </FormRow>
-
-        <FormRow label="Description">
-          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-        </FormRow>
+        )}
       </form>
 
       {editing && task && <SubtaskEditor taskId={task.id} />}

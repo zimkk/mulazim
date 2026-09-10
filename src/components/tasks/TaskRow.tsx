@@ -10,6 +10,15 @@ import { useTaskTagMap } from '@/lib/api/tags'
 import { useRunningTimer, useStartTimer, useStopTimer } from '@/lib/api/time'
 import type { Task, TaskStatus, TaskWithProject } from '@/types/database'
 
+/** Status pill colours — same semantics as the board column dots. */
+const STATUS_PILL: Record<TaskStatus, string> = {
+  todo: 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)] ring-[var(--color-border)]',
+  in_progress: 'bg-[var(--color-accent)]/12 text-[var(--color-accent)] ring-[var(--color-accent)]/25',
+  blocked: 'bg-[var(--color-stale)]/12 text-[var(--color-stale)] ring-[var(--color-stale)]/25',
+  done: 'bg-[var(--color-healthy)]/12 text-[var(--color-healthy)] ring-[var(--color-healthy)]/25',
+  cancelled: 'bg-[var(--color-onhold)]/12 text-[var(--color-onhold)] ring-[var(--color-onhold)]/25',
+}
+
 export function TaskRow({
   task,
   onEdit,
@@ -120,13 +129,25 @@ export function TaskRow({
           {isTiming ? <Square className="size-3.5 fill-current" /> : <Play className="size-3.5" />}
         </button>
       )}
-      {task.due_date && <Badge tone={overdue ? 'overdue' : 'neutral'}>{dueLabel(task.due_date)}</Badge>}
+      {task.due_date && (
+        <Badge tone={overdue ? 'overdue' : 'neutral'} dot={overdue}>
+          {dueLabel(task.due_date)}
+        </Badge>
+      )}
       <PriorityBadge priority={task.priority} />
 
       <Select
         value={task.status}
         onChange={(e) => setStatus(e.target.value as TaskStatus)}
-        className="h-7 w-32 py-0 text-xs"
+        aria-label="Task status"
+        title="Change status"
+        className={cn(
+          // Still a native select — keyboard and screen-reader behaviour intact —
+          // but styled down to a status pill so it stops dominating every row.
+          'h-7 w-auto min-w-[6.5rem] appearance-none rounded-full border-0 py-0 pr-6 pl-2.5 text-xs font-medium shadow-none',
+          'bg-[length:0.65rem] bg-[right_0.5rem_center] bg-no-repeat ring-1 ring-inset',
+          STATUS_PILL[task.status],
+        )}
       >
         {TASK_STATUSES.map((s) => (
           <option key={s} value={s}>

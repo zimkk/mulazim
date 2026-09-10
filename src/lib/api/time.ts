@@ -1,3 +1,5 @@
+import { autoMoveDescription, shouldStartByTimer } from '@/lib/autoRules'
+import { logActivity } from '@/lib/utils/activity'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { qk } from '@/lib/queryKeys'
@@ -58,8 +60,33 @@ export function useStartTimer() {
         .from('time_entries')
         .insert({ task_id: taskId, project_id: projectId, user_id: userId })
       if (error) throw error
+
+      // Auto-rule: tracking time against a task means you are working on it,
+      // so promote it out of To do / Blocked. Never touches a resolved task.
+      const { data: task } = await supabase
+        .from('tasks')
+        .select('status, title')
+        .eq('id', taskId)
+        .single()
+      if (task && shouldStartByTimer(task)) {
+        await supabase.from('tasks').update({ status: 'in_progress' }).eq('id', taskId)
+        if (userId) {
+          await logActivity({
+            userId,
+            activityType: 'status_changed',
+            projectId,
+            taskId,
+            description: autoMoveDescription(task.title, 'timer-started', 'in_progress'),
+            metadata: { automatic: true, rule: 'timer-started' },
+          })
+        }
+      }
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['time'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['time'] })
+      void qc.invalidateQueries({ queryKey: ['tasks'] })
+      void qc.invalidateQueries({ queryKey: ['activity'] })
+    },
   })
 }
 

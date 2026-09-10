@@ -7,6 +7,7 @@ import { GlobalOverlays } from '@/components/GlobalOverlays'
 import { NotificationBell } from '@/components/NotificationBell'
 import { TimerPill } from '@/components/TimerPill'
 import { NotificationEngine } from '@/lib/notificationEngine'
+import { AutoRuleEngine } from '@/lib/autoRuleEngine'
 import { SkeletonRows } from '@/components/ui/States'
 import { Avatar } from '@/components/ui/Avatar'
 import { displayNameOf, useProfile } from '@/lib/api/profile'
@@ -58,6 +59,7 @@ export function AppShell() {
       </div>
       <GlobalOverlays />
       <NotificationEngine />
+      <AutoRuleEngine />
     </div>
   )
 }

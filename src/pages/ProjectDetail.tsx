@@ -39,6 +39,7 @@ import { useAddNote, useProjectActivity } from '@/lib/api/activity'
 import { useUiStore } from '@/stores/uiStore'
 import { useSettings, useStaleThresholds } from '@/lib/api/settings'
 import { confirmDialog } from '@/lib/confirm'
+import { cn } from '@/lib/utils/cn'
 import { projectHealth } from '@/lib/utils/health'
 import { daysSince, dueLabel, relativeTime } from '@/lib/utils/dates'
 import { PROJECT_STATUS_LABEL } from '@/lib/constants'
@@ -222,8 +223,15 @@ export default function ProjectDetail() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
+      {/* Board mode takes the full width — five columns cannot share the row with
+          the Notes panel without half of them being scrolled out of sight. */}
+      <div
+        className={cn(
+          'grid grid-cols-1 gap-4',
+          taskView === 'board' ? 'lg:grid-cols-1' : 'lg:grid-cols-3',
+        )}
+      >
+        <div className={cn('space-y-4', taskView === 'list' && 'lg:col-span-2')}>
           <Card>
             <CardHeader
               title="Tasks"
@@ -312,6 +320,7 @@ export default function ProjectDetail() {
           </Card>
         </div>
 
+        {taskView === 'list' && (
         <Card className="h-fit">
           <CardHeader title="Notes" icon={<NotebookPen className="size-3.5" />} />
           <CardBody className="space-y-2">
@@ -331,6 +340,7 @@ export default function ProjectDetail() {
             </Button>
           </CardBody>
         </Card>
+        )}
       </div>
 
       <ProjectFormModal open={editing} onClose={() => setEditing(false)} project={p} />

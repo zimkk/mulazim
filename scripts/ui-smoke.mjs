@@ -146,12 +146,11 @@ try {
   // Edit it: make it urgent + due yesterday, so it must land in Overdue + the queue.
   await clickText('button', 'First task from UI')
   await byText('h2', 'Edit task')
-  const selects = await page.$$('#task-form select')
-  await selects[1].select('urgent') // Status, Priority, Repeat -> [1] is Priority
+  // Priority is a primary field; status/estimate/etc. live behind "More options".
+  await page.select('#task-form select[name="priority"]', 'urgent')
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
-  // date inputs order: [0] Start date, [1] Due date
   await page.evaluate((v) => {
-    const el = document.querySelectorAll('#task-form input[type="date"]')[1]
+    const el = document.querySelector('#task-form input[name="due_date"]')
     const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value').set
     setter.call(el, v)
     el.dispatchEvent(new Event('input', { bubbles: true }))
@@ -160,7 +159,7 @@ try {
   }, yesterday)
   // confirm React accepted it before saving
   await page.waitForFunction(
-    (v) => document.querySelectorAll('#task-form input[type="date"]')[1]?.value === v,
+    (v) => document.querySelector('#task-form input[name="due_date"]')?.value === v,
     { timeout: 5000 },
     yesterday,
   )
@@ -173,7 +172,7 @@ try {
   await clickText('button', 'First task from UI')
   await byText('h2', 'Edit task')
   await page.waitForFunction(
-    (v) => document.querySelectorAll('#task-form input[type="date"]')[1]?.value === v,
+    (v) => document.querySelector('#task-form input[name="due_date"]')?.value === v,
     { timeout: 20000 },
     yesterday,
   )
@@ -186,9 +185,12 @@ try {
   await clickText('button', 'board')
   await byText('div, span', 'In progress')
   const hasColumns = await page.evaluate(
-    () => ['To do', 'In progress', 'Blocked', 'Done'].every((l) => document.body.innerText.includes(l)),
+    () =>
+      ['To do', 'In progress', 'Blocked', 'Done', 'Cancelled'].every((l) =>
+        document.body.innerText.includes(l),
+      ),
   )
-  ok('board view shows status columns', hasColumns)
+  ok('board shows a column for every status (nothing can vanish)', hasColumns)
   await clickText('button', 'list')
 
   // --- Time tracking: start a timer on the task, see the pill, stop it ---
@@ -204,6 +206,73 @@ try {
       timeout: 6000,
     })
     ok('stopping a timer clears it', true)
+
+    // Auto-rule: tracking time promotes the task out of To do.
+    const promoted = await page
+      .waitForFunction(
+        () =>
+          [...document.querySelectorAll('select[aria-label="Task status"]')].some(
+            (el) => el.value === 'in_progress',
+          ),
+        { timeout: 10000 },
+      )
+      .then(() => true)
+      .catch(() => false)
+    ok('auto-rule: starting a timer moved the task to In progress', promoted)
+  }
+
+  // --- Auto-rule: completing every subtask completes the parent ---
+  // Uses its own task: completing "First task from UI" would clear the overdue
+  // state that the dashboard assertions below depend on.
+  {
+    const quick2 = await page.$('input[placeholder^="Add a task"]')
+    await quick2.type('Parent with checklist')
+    await quick2.press('Enter')
+    await byText('button, span', 'Parent with checklist')
+
+    await clickText('button', 'Parent with checklist')
+    await byText('h2', 'Edit task')
+    // Let the modal's spring settle before grabbing an element inside it.
+    await new Promise((r) => setTimeout(r, 800))
+    const sub = await page.$('input[placeholder="Add a checklist item"]')
+    if (sub) {
+      await sub.type('step one')
+      await sub.press('Enter')
+      await page.waitForFunction(() => document.body.innerText.includes('step one'), {
+        timeout: 15000,
+      })
+      await page.evaluate(() => {
+        const row = [...document.querySelectorAll('li')].find((l) =>
+          l.textContent?.includes('step one'),
+        )
+        row?.querySelector('input[type="checkbox"]')?.click()
+      })
+      await new Promise((r) => setTimeout(r, 1200))
+      await page.keyboard.press('Escape')
+      await page.waitForFunction(() => !document.querySelector('#task-form'), { timeout: 8000 })
+
+      const parentDone = await page
+        .waitForFunction(
+          () => {
+            // `:scope >` matters: without it an ancestor div also matches and we
+            // read some other row's status select.
+            const row = [...document.querySelectorAll('div')].find(
+              (d) =>
+                d.querySelector(':scope > select[aria-label="Task status"]') &&
+                d.textContent?.includes('Parent with checklist'),
+            )
+            return (
+              row?.querySelector(':scope > select[aria-label="Task status"]')?.value === 'done'
+            )
+          },
+          { timeout: 12000 },
+        )
+        .then(() => true)
+        .catch(() => false)
+      ok('auto-rule: finishing every subtask completed the parent', parentDone)
+    } else {
+      ok('auto-rule: subtask editor present', false, 'no checklist input found')
+    }
   }
 
   // --- All tasks page: filters + natural-language quick-add + bulk ---
