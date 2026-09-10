@@ -1,7 +1,6 @@
 import { Suspense } from 'react'
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
-import { m } from '@/lib/motion'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ConnectionBanner } from '@/components/ConnectionBanner'
 import { GlobalOverlays } from '@/components/GlobalOverlays'
@@ -16,7 +15,6 @@ import { useAuthStore } from '@/stores/authStore'
 export function AppShell() {
   const { data: profile } = useProfile()
   const email = useAuthStore((s) => s.user?.email ?? '')
-  const location = useLocation()
   return (
     <div className="flex h-full w-full overflow-hidden">
       <Sidebar />
@@ -49,14 +47,11 @@ export function AppShell() {
                 </div>
               }
             >
-              <m.div
-                key={location.pathname.split('/')[1] || 'home'}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <Outlet />
-              </m.div>
+              {/* No entrance animation here on purpose: this sits inside the
+                  Suspense boundary, so a lazily-loaded route that suspends
+                  mid-animation can be left stranded at opacity 0 — a blank
+                  screen. Routes render immediately instead. */}
+              <Outlet />
             </Suspense>
           </ErrorBoundary>
         </main>

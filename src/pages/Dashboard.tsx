@@ -4,7 +4,6 @@ import { Page, PageHeader } from '@/components/layout/AppShell'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Badge, HealthBadge, PriorityBadge } from '@/components/ui/Badge'
 import { Stat } from '@/components/ui/Stat'
-import { m, stagger, fadeUp } from '@/lib/motion'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
 import { QuickAddTask } from '@/components/tasks/QuickAddTask'
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline'
@@ -201,18 +200,14 @@ export default function Dashboard() {
       {showOnboarding && <Onboarding />}
 
       {!showOnboarding && !d.isLoading && (
-        <m.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4"
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4"
         >
           {stats.map((s) => (
             <Link key={s.label} to={s.to} className="contents">
               <Stat label={s.label} value={s.value} icon={s.icon} tone={s.tone} />
             </Link>
           ))}
-        </m.div>
+        </div>
       )}
 
       <div className="mb-5">
@@ -222,18 +217,14 @@ export default function Dashboard() {
       {d.isLoading ? (
         <SkeletonRows rows={8} />
       ) : (
-        <m.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 gap-4 lg:grid-cols-2"
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2"
         >
           {order.map((id) => (
-            <m.div key={id} variants={fadeUp} className={id === 'activity' ? 'lg:col-span-2' : undefined}>
+            <div key={id} className={id === 'activity' ? 'lg:col-span-2' : undefined}>
               {renderCard(id)}
-            </m.div>
+            </div>
           ))}
-        </m.div>
+        </div>
       )}
     </Page>
   )

@@ -5,7 +5,6 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { FilterChips, SearchInput } from '@/components/ui/Toolbar'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
-import { m, stagger, fadeUp } from '@/lib/motion'
 import { ProjectRow } from '@/components/projects/ProjectRow'
 import { ProjectFormModal } from '@/components/projects/ProjectFormModal'
 import { useProjects } from '@/lib/api/projects'
@@ -103,13 +102,13 @@ export default function Projects() {
         </Card>
       ) : (
         <Card className="overflow-hidden">
-          <m.div variants={stagger} initial="hidden" animate="show">
+          <div >
             {filtered.map((p) => (
-              <m.div key={p.id} variants={fadeUp}>
+              <div key={p.id}>
                 <ProjectRow project={p} />
-              </m.div>
+              </div>
             ))}
-          </m.div>
+          </div>
         </Card>
       )}
 

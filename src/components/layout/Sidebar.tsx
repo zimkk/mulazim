@@ -14,7 +14,6 @@ import {
   Trash2,
   Users,
 } from 'lucide-react'
-import { m } from '@/lib/motion'
 import { cn } from '@/lib/utils/cn'
 import { useUiStore } from '@/stores/uiStore'
 import { UpdateManager } from '@/components/updates/UpdateManager'
@@ -70,19 +69,8 @@ function NavItem({ to, label, icon: Icon, end, collapsed }: Item & { collapsed: 
         )
       }
     >
-      {({ isActive }) => (
-        <>
-          {isActive && !collapsed && (
-            <m.span
-              layoutId="nav-active-rail"
-              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-              className="absolute top-1.5 bottom-1.5 -left-2 w-0.5 rounded-full bg-[var(--color-accent)]"
-            />
-          )}
-          <Icon className="size-4 shrink-0" />
-          {!collapsed && <span className="truncate">{label}</span>}
-        </>
-      )}
+      <Icon className="size-4 shrink-0" />
+      {!collapsed && <span className="truncate">{label}</span>}
     </NavLink>
   )
 }
@@ -94,7 +82,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'flex h-full shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]/80',
+        'flex h-full shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]',
         collapsed ? 'w-14' : 'w-56',
       )}
     >

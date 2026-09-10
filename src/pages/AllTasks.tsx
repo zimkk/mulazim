@@ -5,7 +5,7 @@ import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Field'
 import { SearchInput } from '@/components/ui/Toolbar'
-import { AnimatePresence, m, spring, stagger, fadeUp } from '@/lib/motion'
+import { AnimatePresence, m, spring } from '@/lib/motion'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
 import { useToast } from '@/components/Toast'
 import { TaskRow } from '@/components/tasks/TaskRow'
@@ -303,9 +303,9 @@ export default function AllTasks() {
           />
         </Card>
       ) : (
-        <m.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
+        <div className="space-y-3">
           {groups.map((g) => (
-            <m.div key={g.key} variants={fadeUp}>
+            <div key={g.key}>
               <Card>
                 <CardHeader title={g.key} count={g.tasks.length} />
                 {g.tasks.map((t) => (
@@ -319,9 +319,9 @@ export default function AllTasks() {
                   />
                 ))}
               </Card>
-            </m.div>
+            </div>
           ))}
-        </m.div>
+        </div>
       )}
 
       {edit && (

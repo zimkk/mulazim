@@ -167,23 +167,18 @@ body {
   overflow: hidden; /* desktop shell — panels scroll, not the window */
 }
 
-/* ---------- Reusable surface treatments ---------- */
+/* ---------- Reusable surface treatments ----------
+ * Deliberately cheap: this app runs inside WebKitGTK / WebView2, often on a
+ * software-rendered compositor. Large gradients on a scroll container and
+ * `backdrop-filter` both repaint every frame there and make the whole window
+ * feel laggy, so both are flat fills. `.app-backdrop` stays as a named hook in
+ * case a GPU-safe treatment is added later. */
 .app-backdrop {
   background-color: var(--color-bg);
-  background-image:
-    radial-gradient(60rem 40rem at 100% 0%, color-mix(in srgb, var(--color-accent) 8%, transparent), transparent 60%),
-    radial-gradient(50rem 40rem at 0% 100%, color-mix(in srgb, var(--color-accent-2) 7%, transparent), transparent 55%);
-}
-.dark .app-backdrop {
-  background-image:
-    radial-gradient(60rem 40rem at 100% 0%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 60%),
-    radial-gradient(50rem 40rem at 0% 100%, color-mix(in srgb, var(--color-accent-2) 12%, transparent), transparent 55%);
 }
 
 .glass {
-  background-color: color-mix(in srgb, var(--color-surface) 78%, transparent);
-  backdrop-filter: saturate(180%) blur(12px);
-  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  background-color: var(--color-surface);
 }
 
 .text-gradient {

@@ -28,10 +28,7 @@ export function TimerPill() {
 
   return (
     <div className="flex items-center gap-2 rounded-full bg-[var(--color-accent-soft)] py-1 pr-1 pl-2.5 text-xs ring-1 ring-inset ring-[var(--color-accent)]/25">
-      <span className="relative flex size-1.5 shrink-0">
-        <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--color-accent)] opacity-70" />
-        <span className="relative inline-flex size-1.5 rounded-full bg-[var(--color-accent)]" />
-      </span>
+      <span className="size-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
       <Link
         to={running.task ? `/projects/${running.task.project_id}` : '#'}
         className="max-w-[160px] truncate font-medium text-[var(--color-accent)] hover:underline"

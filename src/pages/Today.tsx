@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { AlertOctagon, CalendarCheck, Eye, ListChecks, Timer, X } from 'lucide-react'
-import { m, stagger, fadeUp } from '@/lib/motion'
 import { Page, PageHeader } from '@/components/layout/AppShell'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -70,8 +69,8 @@ export default function Today() {
       ) : isLoading ? (
         <SkeletonRows rows={6} />
       ) : (
-        <m.div variants={stagger} initial="hidden" animate="show" className="space-y-4">
-          <m.div variants={fadeUp}>
+        <div className="space-y-4">
+          <div>
           <Card elevation="md">
             <CardHeader
               title="Today’s plan"
@@ -130,7 +129,7 @@ export default function Today() {
               ))
             )}
           </Card>
-          </m.div>
+          </div>
 
           <Section
             title="Overdue"
@@ -155,7 +154,7 @@ export default function Today() {
           />
 
           {timeReport.data && timeReport.data.total > 0 && (
-            <m.div variants={fadeUp}>
+            <div>
               <Card>
                 <CardHeader title="Time this week" icon={<Timer className="size-3.5" />} />
                 <div className="divide-y divide-[var(--color-border)]">
@@ -181,9 +180,9 @@ export default function Today() {
                   })}
                 </div>
               </Card>
-            </m.div>
+            </div>
           )}
-        </m.div>
+        </div>
       )}
 
       {edit && (
@@ -207,7 +206,7 @@ function Section({
   empty: string
 }) {
   return (
-    <m.div variants={fadeUp}>
+    <div>
       <Card>
         <CardHeader title={title} icon={icon} count={tasks.length} />
         {tasks.length === 0 ? (
@@ -219,6 +218,6 @@ function Section({
             .map((t) => <TaskRow key={t.id} task={t} onEdit={onEdit} showProject />)
         )}
       </Card>
-    </m.div>
+    </div>
   )
 }

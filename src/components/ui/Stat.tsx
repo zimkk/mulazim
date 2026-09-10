@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { animate } from 'motion'
 import { m, useReduce } from '@/lib/motion'
 import { cn } from '@/lib/utils/cn'
@@ -13,25 +13,41 @@ const TONE_RING: Record<Tone, string> = {
   stale: 'text-[var(--color-stale)] bg-[var(--color-stale)]/10 ring-[var(--color-stale)]/20',
 }
 
-/** Animated integer that counts up from 0 on mount / when `value` changes. */
+/**
+ * Animated integer that counts up on mount / when `value` changes.
+ *
+ * The tween writes straight into the DOM node rather than through `setState`.
+ * A state update per animation frame re-renders this component (and anything
+ * above it) ~60 times a second, per tile — enough to make the whole window feel
+ * sluggish inside a software-rendered webview.
+ */
 export function CountUp({ value, className }: { value: number; className?: string }) {
   const reduce = useReduce()
-  const [display, setDisplay] = useState(reduce ? value : 0)
+  const ref = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
+    const el = ref.current
+    if (!el) return
     if (reduce) {
-      setDisplay(value)
+      el.textContent = String(value)
       return
     }
     const controls = animate(0, value, {
-      duration: 0.7,
+      duration: 0.6,
       ease: [0.22, 1, 0.36, 1],
-      onUpdate: (v) => setDisplay(Math.round(v)),
+      onUpdate: (v) => {
+        el.textContent = String(Math.round(v))
+      },
     })
     return () => controls.stop()
   }, [value, reduce])
 
-  return <span className={cn('tabular-nums', className)}>{display}</span>
+  // Server/first paint shows the final value so the number is never missing.
+  return (
+    <span ref={ref} className={cn('tabular-nums', className)}>
+      {value}
+    </span>
+  )
 }
 
 export function Stat({

@@ -29,7 +29,7 @@ export function Modal({ open, onClose, title, children, footer, width = 'md' }: 
     <AnimatePresence>
       {open && (
         <m.div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-6 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-6"
           variants={backdrop}
           initial="hidden"
           animate="show"

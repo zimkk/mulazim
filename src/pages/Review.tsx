@@ -5,7 +5,6 @@ import { Page, PageHeader } from '@/components/layout/AppShell'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Progress } from '@/components/ui/Progress'
-import { m, stagger, fadeUp } from '@/lib/motion'
 import { EmptyState, SkeletonRows } from '@/components/ui/States'
 import { TaskRow } from '@/components/tasks/TaskRow'
 import { TaskFormModal } from '@/components/tasks/TaskFormModal'
@@ -62,13 +61,9 @@ export default function Review() {
       {loading ? (
         <SkeletonRows rows={8} />
       ) : (
-        <m.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 gap-4 lg:grid-cols-2"
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2"
         >
-          <m.div variants={fadeUp}>
+          <div>
             <Card>
               <CardHeader
                 title="Done this week"
@@ -99,9 +94,9 @@ export default function Review() {
                 </ul>
               )}
             </Card>
-          </m.div>
+          </div>
 
-          <m.div variants={fadeUp}>
+          <div>
             <Card>
               <CardHeader title="Time logged" icon={<Timer className="size-3.5" />} />
               <div className="divide-y divide-[var(--color-border)]">
@@ -127,9 +122,9 @@ export default function Review() {
                 )}
               </div>
             </Card>
-          </m.div>
+          </div>
 
-          <m.div variants={fadeUp}>
+          <div>
             <Card>
               <CardHeader
                 title="Overdue — needs a decision"
@@ -142,9 +137,9 @@ export default function Review() {
                 overdue.map((t) => <TaskRow key={t.id} task={t} onEdit={setEdit} showProject />)
               )}
             </Card>
-          </m.div>
+          </div>
 
-          <m.div variants={fadeUp}>
+          <div>
             <Card>
               <CardHeader
                 title="Due in the next 2 weeks"
@@ -159,9 +154,9 @@ export default function Review() {
                   .map((t) => <TaskRow key={t.id} task={t} onEdit={setEdit} showProject />)
               )}
             </Card>
-          </m.div>
+          </div>
 
-          <m.div variants={fadeUp} className="lg:col-span-2">
+          <div className="lg:col-span-2">
             <Card>
               <CardHeader
                 title="Projects to check on"
@@ -191,8 +186,8 @@ export default function Review() {
                 </ul>
               )}
             </Card>
-          </m.div>
-        </m.div>
+          </div>
+        </div>
       )}
       {edit && (
         <TaskFormModal open onClose={() => setEdit(null)} projectId={edit.project_id} task={edit} />

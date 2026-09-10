@@ -3,7 +3,6 @@ import { addDays, format, parseISO } from 'date-fns'
 import { CalendarDays } from 'lucide-react'
 import { Page, PageHeader } from '@/components/layout/AppShell'
 import { Card, CardHeader } from '@/components/ui/Card'
-import { m, stagger, fadeUp } from '@/lib/motion'
 import { cn } from '@/lib/utils/cn'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
 import { TaskRow } from '@/components/tasks/TaskRow'
@@ -44,12 +43,12 @@ export default function Upcoming() {
       ) : isLoading ? (
         <SkeletonRows rows={8} />
       ) : (
-        <m.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
+        <div className="space-y-3">
           {buckets.map((b) => {
             const isToday = b.key === today.toISOString().slice(0, 10)
             const empty = b.tasks.length === 0
             return (
-              <m.div key={b.key} variants={fadeUp}>
+              <div key={b.key}>
                 <Card
                   elevation={isToday ? 'md' : 'sm'}
                   className={cn(
@@ -68,11 +67,11 @@ export default function Upcoming() {
                     b.tasks.map((t) => <TaskRow key={t.id} task={t} onEdit={setEdit} showProject />)
                   )}
                 </Card>
-              </m.div>
+              </div>
             )
           })}
           {later.length > 0 && (
-            <m.div variants={fadeUp}>
+            <div>
               <Card>
                 <CardHeader title="Later" count={later.length} />
                 {later.map((t) => (
@@ -84,7 +83,7 @@ export default function Upcoming() {
                   </div>
                 ))}
               </Card>
-            </m.div>
+            </div>
           )}
           {(data ?? []).filter((t) => t.due_date).length === 0 && (
             <Card>
@@ -95,7 +94,7 @@ export default function Upcoming() {
               />
             </Card>
           )}
-        </m.div>
+        </div>
       )}
       {edit && (
         <TaskFormModal open onClose={() => setEdit(null)} projectId={edit.project_id} task={edit} />

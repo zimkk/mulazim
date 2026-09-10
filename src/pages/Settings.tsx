@@ -128,13 +128,6 @@ export default function Settings() {
                     : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)]',
                 )}
               >
-                {isActive && (
-                  <m.span
-                    layoutId="settings-active-rail"
-                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                    className="absolute top-2 bottom-2 -left-2 w-0.5 rounded-full bg-[var(--color-accent)]"
-                  />
-                )}
                 <Icon className="size-4 shrink-0" />
                 <span>{label}</span>
               </NavLink>

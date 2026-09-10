@@ -6,7 +6,6 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
-import { m, stagger, fadeUp } from '@/lib/motion'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
 import { ClientFormModal } from '@/components/clients/ClientFormModal'
 import { useClients } from '@/lib/api/clients'
@@ -48,9 +47,9 @@ export default function Clients() {
         </Card>
       ) : (
         <Card className="overflow-hidden">
-          <m.div variants={stagger} initial="hidden" animate="show">
+          <div >
             {visible.map((c) => (
-              <m.div key={c.id} variants={fadeUp}>
+              <div key={c.id}>
                 <Link
                   to={`/clients/${c.id}`}
                   className="flex items-center gap-3 border-b border-[var(--color-border)] px-4 py-3 transition-colors last:border-b-0 hover:bg-[var(--color-surface-2)]/60"
@@ -76,9 +75,9 @@ export default function Clients() {
                     {c.last_activity_at ? `Active ${relativeTime(c.last_activity_at)}` : 'No activity'}
                   </span>
                 </Link>
-              </m.div>
+              </div>
             ))}
-          </m.div>
+          </div>
         </Card>
       )}
 
