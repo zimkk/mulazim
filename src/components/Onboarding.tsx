@@ -111,7 +111,7 @@ export function Onboarding() {
             <Rocket className="size-5" />
           </span>
           <div>
-            <h2 className="text-base font-semibold tracking-tight">Welcome to Grid Manager</h2>
+            <h2 className="text-base font-semibold tracking-tight">Welcome to Mulazim</h2>
             <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
               Your command center for every client, project and task. Let’s get you started.
             </p>

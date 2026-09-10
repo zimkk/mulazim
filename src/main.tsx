@@ -10,6 +10,17 @@ import './index.css'
 
 bootstrapAppearance()
 
+/**
+ * Quiet credit for anyone who opens the devtools console. Deliberately not
+ * surfaced in the UI — Settings → About is the visible attribution.
+ */
+console.log(
+  `%c▍ Mulazim %cv${__APP_VERSION__}\n%cBuilt by zimkk · https://github.com/zimkk/mulazim · MIT`,
+  'font-weight:700;font-size:13px;color:#7c7cf7',
+  'font-size:11px;color:#9aa2b1',
+  'font-size:11px;color:#656d7e',
+)
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>

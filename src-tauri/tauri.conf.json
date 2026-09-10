@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Grid Manager",
-  "version": "0.3.0",
-  "identifier": "com.gridmanager.desktop",
+  "productName": "Mulazim",
+  "version": "0.4.0",
+  "identifier": "com.mulazim.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Grid Manager",
+        "title": "Mulazim",
         "label": "main",
         "width": 1280,
         "height": 820,
@@ -72,7 +72,7 @@
           "Arabic"
         ],
         "displayLanguageSelector": true,
-        "startMenuFolder": "Grid Manager",
+        "startMenuFolder": "Mulazim",
         "installerIcon": "icons/icon.ico",
         "uninstallerIcon": "icons/icon.ico",
         "headerImage": "installer/header.bmp",
@@ -85,7 +85,7 @@
         "silent": true
       },
       "wix": {
-        "upgradeCode": "0adca27c-69e5-59ca-9b4b-c12dff2f75a2",
+        "upgradeCode": "cd138d1e-5912-5325-b968-8410095615bc",
         "bannerPath": "installer/wix-banner.bmp",
         "dialogImagePath": "installer/wix-dialog.bmp"
       },

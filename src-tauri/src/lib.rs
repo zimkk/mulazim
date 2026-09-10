@@ -86,7 +86,7 @@ fn build_menu<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
         .accelerator("CmdOrCtrl+/")
         .build(app)?;
     #[cfg(not(target_os = "macos"))]
-    let about = MenuItemBuilder::with_id("about", "About Grid Manager").build(app)?;
+    let about = MenuItemBuilder::with_id("about", "About Mulazim").build(app)?;
 
     #[allow(unused_mut)]
     let mut builder = MenuBuilder::new(app);
@@ -95,11 +95,15 @@ fn build_menu<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
     #[cfg(target_os = "macos")]
     {
         let meta = AboutMetadata {
-            name: Some("Grid Manager".into()),
+            name: Some("Mulazim".into()),
             version: Some(app.package_info().version.to_string()),
+            authors: Some(vec!["zimkk".into()]),
+            website: Some("https://github.com/zimkk/mulazim".into()),
+            website_label: Some("Source on GitHub".into()),
+            copyright: Some("© 2026 zimkk. MIT licensed.".into()),
             ..Default::default()
         };
-        let app_menu = SubmenuBuilder::new(app, "Grid Manager")
+        let app_menu = SubmenuBuilder::new(app, "Mulazim")
             .about(Some(meta))
             .separator()
             .item(&settings)

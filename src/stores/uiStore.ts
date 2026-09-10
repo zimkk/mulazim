@@ -30,7 +30,7 @@ export const useUiStore = create<UiState>()(
       setOverlay: (overlay) => set({ overlay }),
     }),
     {
-      name: 'grid-manager-ui',
+      name: 'mulazim-ui',
       partialize: (s) => ({
         sidebarCollapsed: s.sidebarCollapsed,
         lastProjectId: s.lastProjectId,

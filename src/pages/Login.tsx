@@ -38,7 +38,7 @@ export default function Login() {
         await signIn(email, password)
       } else {
         await signUp(email, password, displayName || email.split('@')[0]!)
-        notify('Welcome to Grid Manager', 'success')
+        notify('Welcome to Mulazim', 'success')
       }
     } catch {
       /* error surfaced from store */
@@ -68,7 +68,7 @@ export default function Login() {
         <div className="relative flex h-full flex-col justify-between p-12 text-white">
           <div className="flex items-center gap-2.5">
             <Logo className="size-7" />
-            <span className="text-base font-semibold tracking-tight">Grid Manager</span>
+            <span className="text-base font-semibold tracking-tight">Mulazim</span>
           </div>
 
           <div className="max-w-md">
@@ -111,7 +111,7 @@ export default function Login() {
         >
           <div className="mb-6 flex items-center gap-2 lg:hidden">
             <Logo className="size-6" />
-            <span className="text-sm font-semibold">Grid Manager</span>
+            <span className="text-sm font-semibold">Mulazim</span>
           </div>
 
           <h1 className="mb-1 text-xl font-semibold tracking-tight">

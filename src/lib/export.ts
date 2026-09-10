@@ -40,7 +40,7 @@ function toCsv(rows: Record<string, unknown>[]): string {
 }
 
 function toMarkdown(b: Bundle): string {
-  const lines: string[] = [`# Grid Manager export`, ``, `_${b.exported_at}_`, ``]
+  const lines: string[] = [`# Mulazim export`, ``, `_${b.exported_at}_`, ``]
   const projById = new Map((b.projects as Record<string, unknown>[]).map((p) => [p.id as string, p]))
   const tasksByProj = new Map<string, Record<string, unknown>[]>()
   for (const t of b.tasks as Record<string, unknown>[]) {
@@ -80,7 +80,7 @@ function render(bundle: Bundle, format: ExportFormat): { text: string; ext: stri
 export async function exportData(format: ExportFormat): Promise<'saved' | 'cancelled'> {
   const bundle = await fetchAll()
   const { text, ext } = render(bundle, format)
-  const name = `grid-manager-export-${new Date().toISOString().slice(0, 10)}.${ext}`
+  const name = `mulazim-export-${new Date().toISOString().slice(0, 10)}.${ext}`
 
   if (isTauri()) {
     const { save } = await import('@tauri-apps/plugin-dialog')

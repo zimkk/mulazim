@@ -92,7 +92,7 @@ export function Sidebar() {
       >
         <Logo className="size-6 shrink-0" />
         {!collapsed && (
-          <span className="text-sm font-semibold tracking-tight">Grid Manager</span>
+          <span className="text-sm font-semibold tracking-tight">Mulazim</span>
         )}
       </div>
 

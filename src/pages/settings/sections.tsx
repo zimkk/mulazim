@@ -877,12 +877,12 @@ export function AboutSection() {
 
   return (
     <Card>
-      <CardHeader title="About Grid Manager" icon={<Info className="size-3.5" />} />
+      <CardHeader title="About Mulazim" icon={<Info className="size-3.5" />} />
       <CardBody className="space-y-4 text-sm">
         <div className="flex items-center gap-3.5">
           <Logo className="size-11" />
           <div>
-            <p className="text-base font-semibold tracking-tight">Grid Manager</p>
+            <p className="text-base font-semibold tracking-tight">Mulazim</p>
             <p className="text-xs text-[var(--color-text-muted)]">
               Version {version} · MIT licensed
             </p>

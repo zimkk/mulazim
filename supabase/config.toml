@@ -1,6 +1,6 @@
 # Minimal Supabase CLI config. Run `supabase init` to regenerate a full file,
 # or `supabase link --project-ref <ref>` then `supabase db push` to apply migrations.
-project_id = "grid-manager"
+project_id = "mulazim"
 
 [db]
 major_version = 17

@@ -12,7 +12,7 @@ export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,
-    storageKey: 'grid-manager-auth',
+    storageKey: 'mulazim-auth',
   },
 })
 

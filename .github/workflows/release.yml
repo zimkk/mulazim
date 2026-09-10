@@ -120,7 +120,7 @@ jobs:
           # fails) to import an empty keychain certificate.
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Grid Manager ${{ github.ref_name }}'
+          releaseName: 'Mulazim ${{ github.ref_name }}'
           releaseBody: |
             Personal project & task command center — cloud-backed, self-updating.
 
@@ -129,8 +129,8 @@ jobs:
             |----|----------|-------|
             | **Windows** | `*-setup.exe` (recommended) or `*.msi` | Choose your language, install for just you (no admin) or for everyone, and pick the install folder. WebView2 is bundled — nothing else to install. |
             | **macOS** | `*.dmg` | Apple-silicon + Intel universal. Not yet notarized: right-click the app → **Open** once, or allow it in System Settings → Privacy & Security. |
-            | **Linux — Debian/Ubuntu** | `*.deb` | `sudo apt install ./Grid*.deb` (resolves dependencies). |
-            | **Linux — Fedora/RHEL** | `*.rpm` | `sudo dnf install ./Grid*.rpm`. |
+            | **Linux — Debian/Ubuntu** | `*.deb` | `sudo apt install ./Mulazim*.deb` (resolves dependencies). |
+            | **Linux — Fedora/RHEL** | `*.rpm` | `sudo dnf install ./Mulazim*.rpm`. |
             | **Linux — other** | `*.AppImage` | `chmod +x` and run; no install needed. |
 
             Once installed, the app checks for updates on launch and updates itself.

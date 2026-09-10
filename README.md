@@ -1,4 +1,4 @@
-# Grid Manager
+# Mulazim
 
 A personal, cross-platform desktop project & task tracker. One place to see every
 active piece of work — freelance clients, company tasks, personal projects — so
@@ -20,8 +20,8 @@ device you sign in from.
 | **Windows** | `*_x64-setup.exe` *(recommended)* | Installer lets you choose language, install for just you or everyone, the folder, and whether to add a desktop icon. WebView2 is bundled. |
 | **Windows** *(alt)* | `*_x64_en-US.msi` | For managed/enterprise deployment. |
 | **macOS** | `*_universal.dmg` | One build for Apple silicon and Intel. |
-| **Linux — Debian/Ubuntu** | `*_amd64.deb` | `sudo apt install ./Grid*.deb` |
-| **Linux — Fedora/RHEL** | `*.x86_64.rpm` | `sudo dnf install ./Grid*.rpm` |
+| **Linux — Debian/Ubuntu** | `*_amd64.deb` | `sudo apt install ./Mulazim*.deb` |
+| **Linux — Fedora/RHEL** | `*.x86_64.rpm` | `sudo dnf install ./Mulazim*.rpm` |
 | **Linux — anything else** | `*.AppImage` | `chmod +x` and run. |
 
 Once installed the app checks for updates on launch and updates itself — you
@@ -184,7 +184,7 @@ docs/screenshots/     images used by this README
 
 Built and maintained by **[@zimkk](https://github.com/zimkk)**.
 
-If Grid Manager is useful to you, a ⭐ on the repo is genuinely appreciated —
+If Mulazim is useful to you, a ⭐ on the repo is genuinely appreciated —
 and issues or pull requests are welcome.
 
 Standing on the shoulders of:

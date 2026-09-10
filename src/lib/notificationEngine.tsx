@@ -118,7 +118,7 @@ export function NotificationEngine() {
       if (added > 0) {
         void qc.invalidateQueries({ queryKey: ['notifications'] })
         const first = rows[0]!
-        await fireNative(first.title, first.body ?? 'Open Grid Manager to review.')
+        await fireNative(first.title, first.body ?? 'Open Mulazim to review.')
       }
 
       // Daily digest
@@ -140,7 +140,7 @@ export function NotificationEngine() {
             },
           ])
           void qc.invalidateQueries({ queryKey: ['notifications'] })
-          await fireNative('Grid Manager — daily digest', `${open} open, ${overdue} overdue.`)
+          await fireNative('Mulazim — daily digest', `${open} open, ${overdue} overdue.`)
         }
       }
     } finally {

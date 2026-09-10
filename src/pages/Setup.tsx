@@ -9,7 +9,7 @@ export default function Setup() {
         <CardBody className="space-y-4 p-7">
           <div className="flex items-center gap-2.5">
             <Logo className="size-6" />
-            <span className="text-sm font-semibold tracking-tight">Grid Manager</span>
+            <span className="text-sm font-semibold tracking-tight">Mulazim</span>
           </div>
 
           <div className="flex items-start gap-3">
