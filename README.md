@@ -180,6 +180,26 @@ docs/screenshots/     images used by this README
 .github/workflows/    3-OS release pipeline
 ```
 
+## Credits
+
+Built and maintained by **[@zimkk](https://github.com/zimkk)**.
+
+If Grid Manager is useful to you, a ⭐ on the repo is genuinely appreciated —
+and issues or pull requests are welcome.
+
+Standing on the shoulders of:
+
+| | |
+|---|---|
+| [Tauri](https://tauri.app) | native shell, bundling, updater — one Rust binary per OS |
+| [Supabase](https://supabase.com) | Postgres, auth and Row Level Security |
+| [React](https://react.dev) · [TanStack Query](https://tanstack.com/query) · [Zustand](https://zustand-demo.pmnd.rs) | UI and state |
+| [Tailwind CSS](https://tailwindcss.com) · [Motion](https://motion.dev) | styling and animation |
+| [Lucide](https://lucide.dev) · [date-fns](https://date-fns.org) | icons and dates |
+
 ## License
 
-MIT — see [`LICENSE`](./LICENSE).
+MIT — © 2026 [zimkk](https://github.com/zimkk). See [`LICENSE`](./LICENSE).
+
+You're free to use, modify and redistribute this, including commercially. The
+only condition is keeping the copyright notice.

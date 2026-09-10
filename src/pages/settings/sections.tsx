@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   AlertTriangle,
   Bell,
   Check,
   Download,
+  ExternalLink,
   Info,
   Keyboard,
   LayoutDashboard,
@@ -24,12 +25,13 @@ import { UpdateManager } from '@/components/updates/UpdateManager'
 import { useToast } from '@/components/Toast'
 import { useProfile, useUpdateProfile, useUploadAvatar } from '@/lib/api/profile'
 import { Avatar } from '@/components/ui/Avatar'
+import { Logo } from '@/components/ui/Logo'
 import { useSettings, useUpdateSettings } from '@/lib/api/settings'
 import { useProjects } from '@/lib/api/projects'
 import { useAuthStore } from '@/stores/authStore'
 import { supabase } from '@/lib/supabase'
 import { exportData, importData, type ExportFormat } from '@/lib/export'
-import { appVersion, isAutostartEnabled, isTauri, setAutostart } from '@/lib/tauri'
+import { appVersion, isAutostartEnabled, isTauri, openExternal, setAutostart } from '@/lib/tauri'
 import {
   DEFAULT_SETTINGS,
   DEFAULT_KEYBINDINGS,
@@ -851,8 +853,24 @@ export function UpdatesSection() {
 }
 
 /* ----------------------------- About ----------------------------- */
+const REPO_URL = 'https://github.com/zimkk/mulazim'
+const AUTHOR_URL = 'https://github.com/zimkk'
+
+/** An external link that opens in the real browser, not inside the webview. */
+function ExtLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <button
+      onClick={() => void openExternal(href)}
+      className="inline-flex items-center gap-1 text-[var(--color-accent)] transition-colors hover:underline"
+    >
+      {children}
+      <ExternalLink className="size-3" />
+    </button>
+  )
+}
+
 export function AboutSection() {
-  const [version, setVersion] = useState('0.1.0')
+  const [version, setVersion] = useState(__APP_VERSION__)
   useEffect(() => {
     void appVersion().then(setVersion)
   }, [])
@@ -860,16 +878,40 @@ export function AboutSection() {
   return (
     <Card>
       <CardHeader title="About Grid Manager" icon={<Info className="size-3.5" />} />
-      <CardBody className="space-y-2 text-sm">
-        <p>
-          <span className="text-[var(--color-text-muted)]">Version</span> {version}
-        </p>
+      <CardBody className="space-y-4 text-sm">
+        <div className="flex items-center gap-3.5">
+          <Logo className="size-11" />
+          <div>
+            <p className="text-base font-semibold tracking-tight">Grid Manager</p>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Version {version} · MIT licensed
+            </p>
+          </div>
+        </div>
+
         <p className="text-[var(--color-text-muted)]">
-          A personal, cross-platform project & task command center. Cloud-backed by Supabase,
+          A personal, cross-platform project &amp; task command center. Cloud-backed by Supabase,
           self-updating via GitHub Releases.
         </p>
-        <p className="text-xs text-[var(--color-text-subtle)]">
-          Built with Tauri, React, TypeScript and Tailwind. See ARCHITECTURE.md in the repo.
+
+        <div className="space-y-1.5 border-t border-[var(--color-border)] pt-3.5">
+          <p>
+            <span className="text-[var(--color-text-muted)]">Created by</span>{' '}
+            <ExtLink href={AUTHOR_URL}>zimkk</ExtLink>
+          </p>
+          <p>
+            <span className="text-[var(--color-text-muted)]">Source</span>{' '}
+            <ExtLink href={REPO_URL}>github.com/zimkk/mulazim</ExtLink>
+          </p>
+          <p>
+            <span className="text-[var(--color-text-muted)]">Found a bug?</span>{' '}
+            <ExtLink href={`${REPO_URL}/issues`}>Open an issue</ExtLink>
+          </p>
+        </div>
+
+        <p className="border-t border-[var(--color-border)] pt-3.5 text-xs text-[var(--color-text-subtle)]">
+          Built with Tauri, React, TypeScript, Tailwind CSS and Supabase.
+          Icons by Lucide.
         </p>
       </CardBody>
     </Card>

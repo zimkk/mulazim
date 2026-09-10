@@ -55,13 +55,36 @@ export async function onTauriEvent<T>(
   }
 }
 
+/**
+ * The app version. `__APP_VERSION__` is injected from package.json by Vite, so
+ * the browser fallback can never drift out of date the way a hardcoded string
+ * does — it read "0.1.0" for two releases before this.
+ */
 export async function appVersion(): Promise<string> {
-  if (!isTauri()) return import.meta.env.VITE_APP_VERSION ?? '0.1.0'
+  if (!isTauri()) return __APP_VERSION__
   try {
     const { getVersion } = await import('@tauri-apps/api/app')
     return await getVersion()
   } catch {
-    return '0.1.0'
+    return __APP_VERSION__
+  }
+}
+
+/**
+ * Open a URL in the user's real browser. Inside the webview a plain anchor
+ * would navigate the app itself, replacing the UI with a web page and no way
+ * back. In a plain browser this falls back to a normal new tab.
+ */
+export async function openExternal(url: string): Promise<void> {
+  if (!isTauri()) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+    return
+  }
+  try {
+    const { openUrl } = await import('@tauri-apps/plugin-opener')
+    await openUrl(url)
+  } catch {
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 }
 
