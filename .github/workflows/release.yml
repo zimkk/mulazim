@@ -104,7 +104,7 @@ jobs:
           node -e "const fs=require('fs');const p='src-tauri/tauri.conf.json';const c=JSON.parse(fs.readFileSync(p,'utf8'));c.bundle.windows.certificateThumbprint=process.argv[1];fs.writeFileSync(p,JSON.stringify(c,null,2)+'\n');" $cert.Thumbprint
 
       - name: Build, sign and publish the desktop app
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # TAURI_SIGNING_PRIVATE_KEY is set by the "Prepare signing key" step above.
