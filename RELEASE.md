@@ -82,6 +82,20 @@ To notarize (needs a paid Apple Developer account): add the `APPLE_CERTIFICATE`,
 **Only add the env lines once the secrets exist** — empty ones make the macOS
 job fail on an empty keychain import.
 
+## Before you tag: lint the workflow
+
+An invalid workflow file fails in **0 seconds with no jobs**, which is easy to
+misread as an infrastructure blip. Catch it locally first:
+
+```bash
+# https://github.com/rhysd/actionlint/releases
+actionlint .github/workflows/release.yml
+```
+
+It catches things YAML validation cannot — notably that the `secrets` context is
+**not** available in a step-level `if:` (put the secret in job-level `env:` and
+test `env.X != ''` instead).
+
 ## Cutting a release
 
 1. Bump the version in **both** `package.json` and `src-tauri/tauri.conf.json`
