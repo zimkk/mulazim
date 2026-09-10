@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Plus, Search } from 'lucide-react'
+import { FolderKanban, Plus } from 'lucide-react'
 import { Page, PageHeader } from '@/components/layout/AppShell'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Field'
+import { FilterChips, SearchInput } from '@/components/ui/Toolbar'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
-import { cn } from '@/lib/utils/cn'
+import { m, stagger, fadeUp } from '@/lib/motion'
 import { ProjectRow } from '@/components/projects/ProjectRow'
 import { ProjectFormModal } from '@/components/projects/ProjectFormModal'
 import { useProjects } from '@/lib/api/projects'
@@ -66,32 +66,18 @@ export default function Projects() {
         }
       />
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <Search className="absolute top-2.5 left-2.5 size-4 text-[--color-text-subtle]" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search projects or clients"
-            className="w-64 pl-8"
-          />
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {PROJECT_FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={cn(
-                'rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
-                filter === f
-                  ? 'bg-[--color-accent] text-[--color-accent-fg]'
-                  : 'bg-[--color-surface] text-[--color-text-muted] hover:bg-[--color-surface-2]',
-              )}
-            >
-              {PROJECT_FILTER_LABEL[f]}
-            </button>
-          ))}
-        </div>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <SearchInput
+          value={q}
+          onValueChange={setQ}
+          placeholder="Search projects or clients"
+          className="w-64"
+        />
+        <FilterChips
+          value={filter}
+          onChange={setFilter}
+          options={PROJECT_FILTERS.map((f) => ({ value: f, label: PROJECT_FILTER_LABEL[f] }))}
+        />
       </div>
 
       {isError ? (
@@ -101,6 +87,7 @@ export default function Projects() {
       ) : filtered.length === 0 ? (
         <Card>
           <EmptyState
+            icon={<FolderKanban className="size-5" />}
             title={data && data.length > 0 ? 'No projects match this filter' : 'No projects yet'}
             description={
               data && data.length > 0
@@ -115,10 +102,14 @@ export default function Projects() {
           />
         </Card>
       ) : (
-        <Card>
-          {filtered.map((p) => (
-            <ProjectRow key={p.id} project={p} />
-          ))}
+        <Card className="overflow-hidden">
+          <m.div variants={stagger} initial="hidden" animate="show">
+            {filtered.map((p) => (
+              <m.div key={p.id} variants={fadeUp}>
+                <ProjectRow project={p} />
+              </m.div>
+            ))}
+          </m.div>
         </Card>
       )}
 

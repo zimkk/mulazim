@@ -31,9 +31,12 @@ export function Avatar({
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center rounded-full bg-[--color-accent] text-[10px] font-semibold text-[--color-accent-fg]',
+        'inline-flex items-center justify-center rounded-full text-[0.625rem] font-semibold text-white shadow-xs ring-1 ring-inset ring-white/15',
         className,
       )}
+      style={{
+        background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-2))',
+      }}
     >
       {initials(name)}
     </span>

@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { AlertOctagon, CalendarClock, CheckCircle2, FolderKanban, Timer } from 'lucide-react'
 import { Page, PageHeader } from '@/components/layout/AppShell'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
+import { Progress } from '@/components/ui/Progress'
+import { m, stagger, fadeUp } from '@/lib/motion'
 import { EmptyState, SkeletonRows } from '@/components/ui/States'
 import { TaskRow } from '@/components/tasks/TaskRow'
 import { TaskFormModal } from '@/components/tasks/TaskFormModal'
@@ -59,82 +62,137 @@ export default function Review() {
       {loading ? (
         <SkeletonRows rows={8} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader title="Done this week" count={completed.data?.length ?? 0} />
-            {(completed.data ?? []).length === 0 ? (
-              <EmptyState title="Nothing completed yet this week" />
-            ) : (
-              <ul className="divide-y divide-[--color-border]">
-                {(completed.data ?? []).slice(0, 12).map((t) => (
-                  <li key={t.id} className="flex items-center justify-between px-4 py-2 text-sm">
-                    <span className="truncate">{t.title}</span>
-                    <span className="shrink-0 text-xs text-[--color-text-muted]">
-                      {t.project?.name} · {relativeTime(t.completed_at)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <Card>
-            <CardHeader title="Time logged" />
-            <div className="divide-y divide-[--color-border]">
-              <div className="flex justify-between px-4 py-2 text-sm font-medium">
-                <span>This week</span>
-                <span>{fmtMins(time.data?.total ?? 0)}</span>
-              </div>
-              {(time.data?.rows ?? []).map((r) => (
-                <div key={r.name} className="flex justify-between px-4 py-1.5 text-xs text-[--color-text-muted]">
-                  <span className="truncate">{r.name}</span>
-                  <span>{fmtMins(r.minutes)}</span>
-                </div>
-              ))}
-              {(time.data?.rows ?? []).length === 0 && (
-                <p className="px-4 py-3 text-xs text-[--color-text-subtle]">No time tracked.</p>
+        <m.div
+          variants={stagger}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 gap-4 lg:grid-cols-2"
+        >
+          <m.div variants={fadeUp}>
+            <Card>
+              <CardHeader
+                title="Done this week"
+                icon={<CheckCircle2 className="size-3.5" />}
+                count={completed.data?.length ?? 0}
+              />
+              {(completed.data ?? []).length === 0 ? (
+                <EmptyState
+                  icon={<CheckCircle2 className="size-5" />}
+                  title="Nothing completed yet this week"
+                />
+              ) : (
+                <ul className="divide-y divide-[var(--color-border)]">
+                  {(completed.data ?? []).slice(0, 12).map((t) => (
+                    <li
+                      key={t.id}
+                      className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <CheckCircle2 className="size-3.5 shrink-0 text-[var(--color-healthy)]" />
+                        <span className="truncate">{t.title}</span>
+                      </span>
+                      <span className="shrink-0 text-xs text-[var(--color-text-subtle)]">
+                        {t.project?.name} · {relativeTime(t.completed_at)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               )}
-            </div>
-          </Card>
+            </Card>
+          </m.div>
 
-          <Card>
-            <CardHeader title="Overdue — needs a decision" count={overdue.length} />
-            {overdue.length === 0 ? (
-              <EmptyState title="Nothing overdue" />
-            ) : (
-              overdue.map((t) => <TaskRow key={t.id} task={t} onEdit={setEdit} showProject />)
-            )}
-          </Card>
-
-          <Card>
-            <CardHeader title="Due in the next 2 weeks" count={upcoming.length} />
-            {upcoming.length === 0 ? (
-              <EmptyState title="Clear runway" />
-            ) : (
-              upcoming.slice(0, 12).map((t) => <TaskRow key={t.id} task={t} onEdit={setEdit} showProject />)
-            )}
-          </Card>
-
-          <Card className="lg:col-span-2">
-            <CardHeader title="Projects to check on" count={stale.length + review.length} />
-            {stale.length + review.length === 0 ? (
-              <EmptyState title="Every project is healthy" />
-            ) : (
-              <ul className="divide-y divide-[--color-border]">
-                {[...stale, ...review].map((p) => (
-                  <li key={p.id} className="flex items-center justify-between px-4 py-2 text-sm">
-                    <Link to={`/projects/${p.id}`} className="hover:text-[--color-accent]">
-                      {p.name}
-                    </Link>
-                    <Badge tone={stale.includes(p) ? 'stale' : 'attention'}>
-                      {stale.includes(p) ? 'Stale' : 'Due for review'}
-                    </Badge>
-                  </li>
+          <m.div variants={fadeUp}>
+            <Card>
+              <CardHeader title="Time logged" icon={<Timer className="size-3.5" />} />
+              <div className="divide-y divide-[var(--color-border)]">
+                <div className="flex items-baseline justify-between px-4 py-3">
+                  <span className="text-sm font-medium">This week</span>
+                  <span className="text-lg font-semibold tabular-nums tracking-tight text-[var(--color-accent)]">
+                    {fmtMins(time.data?.total ?? 0)}
+                  </span>
+                </div>
+                {(time.data?.rows ?? []).map((r) => (
+                  <div key={r.name} className="px-4 py-2.5">
+                    <div className="mb-1.5 flex justify-between text-xs">
+                      <span className="truncate text-[var(--color-text)]">{r.name}</span>
+                      <span className="tabular-nums text-[var(--color-text-muted)]">
+                        {fmtMins(r.minutes)}
+                      </span>
+                    </div>
+                    <Progress value={r.minutes / Math.max(1, time.data?.total ?? 1)} />
+                  </div>
                 ))}
-              </ul>
-            )}
-          </Card>
-        </div>
+                {(time.data?.rows ?? []).length === 0 && (
+                  <p className="px-4 py-3 text-xs text-[var(--color-text-subtle)]">No time tracked.</p>
+                )}
+              </div>
+            </Card>
+          </m.div>
+
+          <m.div variants={fadeUp}>
+            <Card>
+              <CardHeader
+                title="Overdue — needs a decision"
+                icon={<AlertOctagon className="size-3.5" />}
+                count={overdue.length}
+              />
+              {overdue.length === 0 ? (
+                <EmptyState title="Nothing overdue" />
+              ) : (
+                overdue.map((t) => <TaskRow key={t.id} task={t} onEdit={setEdit} showProject />)
+              )}
+            </Card>
+          </m.div>
+
+          <m.div variants={fadeUp}>
+            <Card>
+              <CardHeader
+                title="Due in the next 2 weeks"
+                icon={<CalendarClock className="size-3.5" />}
+                count={upcoming.length}
+              />
+              {upcoming.length === 0 ? (
+                <EmptyState title="Clear runway" />
+              ) : (
+                upcoming
+                  .slice(0, 12)
+                  .map((t) => <TaskRow key={t.id} task={t} onEdit={setEdit} showProject />)
+              )}
+            </Card>
+          </m.div>
+
+          <m.div variants={fadeUp} className="lg:col-span-2">
+            <Card>
+              <CardHeader
+                title="Projects to check on"
+                icon={<FolderKanban className="size-3.5" />}
+                count={stale.length + review.length}
+              />
+              {stale.length + review.length === 0 ? (
+                <EmptyState
+                  icon={<FolderKanban className="size-5" />}
+                  title="Every project is healthy"
+                />
+              ) : (
+                <ul className="divide-y divide-[var(--color-border)]">
+                  {[...stale, ...review].map((p) => (
+                    <li key={p.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                      <Link
+                        to={`/projects/${p.id}`}
+                        className="truncate transition-colors hover:text-[var(--color-accent)]"
+                      >
+                        {p.name}
+                      </Link>
+                      <Badge tone={stale.includes(p) ? 'stale' : 'attention'} dot>
+                        {stale.includes(p) ? 'Stale' : 'Due for review'}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          </m.div>
+        </m.div>
       )}
       {edit && (
         <TaskFormModal open onClose={() => setEdit(null)} projectId={edit.project_id} task={edit} />

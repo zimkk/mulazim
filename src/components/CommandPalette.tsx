@@ -4,6 +4,7 @@ import {
   Activity,
   FolderKanban,
   LayoutDashboard,
+  ListChecks,
   Plus,
   Search,
   Settings as SettingsIcon,
@@ -13,8 +14,8 @@ import { useClients } from '@/lib/api/clients'
 import { useProjects } from '@/lib/api/projects'
 import { useAllOpenTasks } from '@/lib/api/tasks'
 import { useUiStore } from '@/stores/uiStore'
+import { AnimatePresence, backdrop, m, modalPanel } from '@/lib/motion'
 import { cn } from '@/lib/utils/cn'
-import { ListChecks } from 'lucide-react'
 
 interface Item {
   id: string
@@ -97,69 +98,89 @@ export function CommandPalette() {
   }, [open])
   useEffect(() => setActive(0), [q])
 
-  if (!open) return null
-
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-start justify-center bg-black/40 p-6 pt-[12vh]"
-      onMouseDown={close}
-    >
-      <div
-        className="w-full max-w-lg overflow-hidden rounded-lg border border-[--color-border] bg-[--color-surface] shadow-xl"
-        onMouseDown={(e) => e.stopPropagation()}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') close()
-          if (e.key === 'ArrowDown') {
-            e.preventDefault()
-            setActive((a) => Math.min(a + 1, filtered.length - 1))
-          }
-          if (e.key === 'ArrowUp') {
-            e.preventDefault()
-            setActive((a) => Math.max(a - 1, 0))
-          }
-          if (e.key === 'Enter') {
-            e.preventDefault()
-            filtered[active]?.run()
-          }
-        }}
-      >
-        <div className="flex items-center gap-2 border-b border-[--color-border] px-3">
-          <Search className="size-4 text-[--color-text-subtle]" />
-          <input
-            ref={inputRef}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Jump to… or type a command"
-            className="w-full bg-transparent py-3 text-sm text-[--color-text] outline-none placeholder:text-[--color-text-subtle]"
-          />
-        </div>
-        <ul className="max-h-80 overflow-y-auto py-1">
-          {filtered.length === 0 && (
-            <li className="px-3 py-6 text-center text-xs text-[--color-text-muted]">No matches</li>
-          )}
-          {filtered.map((item, i) => {
-            const Icon = item.icon
-            return (
-              <li key={item.id}>
-                <button
-                  onMouseEnter={() => setActive(i)}
-                  onClick={() => item.run()}
-                  className={cn(
-                    'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm',
-                    i === active ? 'bg-[--color-surface-2]' : '',
-                  )}
-                >
-                  <Icon className="size-4 shrink-0 text-[--color-text-muted]" />
-                  <span className="flex-1 truncate text-[--color-text]">{item.label}</span>
-                  {item.hint && (
-                    <span className="text-xs text-[--color-text-subtle]">{item.hint}</span>
-                  )}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      </div>
-    </div>
+    <AnimatePresence>
+      {open && (
+        <m.div
+          className="fixed inset-0 z-[60] flex items-start justify-center bg-black/40 p-6 pt-[12vh] backdrop-blur-sm"
+          variants={backdrop}
+          initial="hidden"
+          animate="show"
+          exit="exit"
+          onMouseDown={close}
+        >
+          <m.div
+            className="w-full max-w-lg overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg"
+            variants={modalPanel}
+            initial="hidden"
+            animate="show"
+            exit="exit"
+            onMouseDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') close()
+              if (e.key === 'ArrowDown') {
+                e.preventDefault()
+                setActive((a) => Math.min(a + 1, filtered.length - 1))
+              }
+              if (e.key === 'ArrowUp') {
+                e.preventDefault()
+                setActive((a) => Math.max(a - 1, 0))
+              }
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                filtered[active]?.run()
+              }
+            }}
+          >
+            <div className="flex items-center gap-2.5 border-b border-[var(--color-border)] px-4">
+              <Search className="size-4 text-[var(--color-text-subtle)]" />
+              <input
+                ref={inputRef}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Jump to… or type a command"
+                className="w-full bg-transparent py-3.5 text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-subtle)]"
+              />
+            </div>
+            <ul className="max-h-80 overflow-y-auto p-1.5">
+              {filtered.length === 0 && (
+                <li className="px-3 py-6 text-center text-xs text-[var(--color-text-muted)]">No matches</li>
+              )}
+              {filtered.map((item, i) => {
+                const Icon = item.icon
+                const isActive = i === active
+                return (
+                  <li key={item.id}>
+                    <button
+                      onMouseEnter={() => setActive(i)}
+                      onClick={() => item.run()}
+                      className={cn(
+                        'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors',
+                        isActive
+                          ? 'bg-[var(--color-accent-soft)] text-[var(--color-text)]'
+                          : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]',
+                      )}
+                    >
+                      <Icon
+                        className={cn(
+                          'size-4 shrink-0',
+                          isActive ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-subtle)]',
+                        )}
+                      />
+                      <span className="flex-1 truncate text-[var(--color-text)]">{item.label}</span>
+                      {item.hint && (
+                        <span className="rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-1.5 py-0.5 text-[0.6875rem] text-[var(--color-text-subtle)]">
+                          {item.hint}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </m.div>
+        </m.div>
+      )}
+    </AnimatePresence>
   )
 }

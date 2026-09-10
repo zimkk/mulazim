@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { Plus, Users } from 'lucide-react'
 import { Page, PageHeader } from '@/components/layout/AppShell'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { Avatar } from '@/components/ui/Avatar'
+import { m, stagger, fadeUp } from '@/lib/motion'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
 import { ClientFormModal } from '@/components/clients/ClientFormModal'
 import { useClients } from '@/lib/api/clients'
@@ -34,6 +36,7 @@ export default function Clients() {
       ) : visible.length === 0 ? (
         <Card>
           <EmptyState
+            icon={<Users className="size-5" />}
             title="No clients yet"
             description="Add a client to group their projects and tasks."
             action={
@@ -44,31 +47,38 @@ export default function Clients() {
           />
         </Card>
       ) : (
-        <Card>
-          {visible.map((c) => (
-            <Link
-              key={c.id}
-              to={`/clients/${c.id}`}
-              className="flex items-center gap-3 border-b border-[--color-border] px-4 py-3 last:border-b-0 hover:bg-[--color-surface-2]"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-medium">{c.name}</span>
-                  {c.company_name && (
-                    <span className="text-xs text-[--color-text-muted]">{c.company_name}</span>
-                  )}
-                  {c.status !== 'active' && <Badge tone="neutral">{c.status}</Badge>}
-                </div>
-                <p className="mt-0.5 text-xs text-[--color-text-muted]">
-                  {c.active_project_count} active project{c.active_project_count === 1 ? '' : 's'} ·{' '}
-                  {c.open_task_count} open task{c.open_task_count === 1 ? '' : 's'}
-                </p>
-              </div>
-              <span className="text-xs text-[--color-text-muted]">
-                {c.last_activity_at ? `Active ${relativeTime(c.last_activity_at)}` : 'No activity'}
-              </span>
-            </Link>
-          ))}
+        <Card className="overflow-hidden">
+          <m.div variants={stagger} initial="hidden" animate="show">
+            {visible.map((c) => (
+              <m.div key={c.id} variants={fadeUp}>
+                <Link
+                  to={`/clients/${c.id}`}
+                  className="flex items-center gap-3 border-b border-[var(--color-border)] px-4 py-3 transition-colors last:border-b-0 hover:bg-[var(--color-surface-2)]/60"
+                >
+                  <Avatar name={c.name} className="size-9 text-xs" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium">{c.name}</span>
+                      {c.company_name && (
+                        <span className="truncate text-xs text-[var(--color-text-muted)]">
+                          {c.company_name}
+                        </span>
+                      )}
+                      {c.status !== 'active' && <Badge tone="neutral">{c.status}</Badge>}
+                    </div>
+                    <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+                      {c.active_project_count} active project
+                      {c.active_project_count === 1 ? '' : 's'} · {c.open_task_count} open task
+                      {c.open_task_count === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs text-[var(--color-text-subtle)]">
+                    {c.last_activity_at ? `Active ${relativeTime(c.last_activity_at)}` : 'No activity'}
+                  </span>
+                </Link>
+              </m.div>
+            ))}
+          </m.div>
         </Card>
       )}
 

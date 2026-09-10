@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
+import { CalendarDays } from 'lucide-react'
 import { Page, PageHeader } from '@/components/layout/AppShell'
 import { Card, CardHeader } from '@/components/ui/Card'
+import { m, stagger, fadeUp } from '@/lib/motion'
+import { cn } from '@/lib/utils/cn'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
 import { TaskRow } from '@/components/tasks/TaskRow'
 import { TaskFormModal } from '@/components/tasks/TaskFormModal'
@@ -41,46 +44,58 @@ export default function Upcoming() {
       ) : isLoading ? (
         <SkeletonRows rows={8} />
       ) : (
-        <div className="space-y-3">
-          {buckets.map((b) => (
-            <Card key={b.key}>
-              <CardHeader
-                title={
-                  b.key === today.toISOString().slice(0, 10)
-                    ? 'Today'
-                    : format(b.date, 'EEEE, MMM d')
-                }
-                count={b.tasks.length}
-              />
-              {b.tasks.length === 0 ? (
-                <div className="px-4 py-3 text-xs text-[--color-text-subtle]">Nothing due</div>
-              ) : (
-                b.tasks.map((t) => <TaskRow key={t.id} task={t} onEdit={setEdit} showProject />)
-              )}
-            </Card>
-          ))}
+        <m.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
+          {buckets.map((b) => {
+            const isToday = b.key === today.toISOString().slice(0, 10)
+            const empty = b.tasks.length === 0
+            return (
+              <m.div key={b.key} variants={fadeUp}>
+                <Card
+                  elevation={isToday ? 'md' : 'sm'}
+                  className={cn(
+                    empty && 'opacity-60 transition-opacity hover:opacity-100',
+                    isToday && 'ring-1 ring-[var(--color-accent)]/30',
+                  )}
+                >
+                  <CardHeader
+                    title={isToday ? 'Today' : format(b.date, 'EEEE, MMM d')}
+                    icon={isToday ? <CalendarDays className="size-3.5" /> : undefined}
+                    count={b.tasks.length}
+                  />
+                  {empty ? (
+                    <div className="px-4 py-3 text-xs text-[var(--color-text-subtle)]">Nothing due</div>
+                  ) : (
+                    b.tasks.map((t) => <TaskRow key={t.id} task={t} onEdit={setEdit} showProject />)
+                  )}
+                </Card>
+              </m.div>
+            )
+          })}
           {later.length > 0 && (
-            <Card>
-              <CardHeader title="Later" count={later.length} />
-              {later.map((t) => (
-                <div key={t.id}>
-                  <div className="px-4 pt-2 text-xs text-[--color-text-subtle]">
-                    {format(parseISO(t.due_date!), 'MMM d')}
+            <m.div variants={fadeUp}>
+              <Card>
+                <CardHeader title="Later" count={later.length} />
+                {later.map((t) => (
+                  <div key={t.id}>
+                    <div className="px-4 pt-2 text-xs font-medium text-[var(--color-text-subtle)]">
+                      {format(parseISO(t.due_date!), 'MMM d')}
+                    </div>
+                    <TaskRow task={t} onEdit={setEdit} showProject />
                   </div>
-                  <TaskRow task={t} onEdit={setEdit} showProject />
-                </div>
-              ))}
-            </Card>
+                ))}
+              </Card>
+            </m.div>
           )}
           {(data ?? []).filter((t) => t.due_date).length === 0 && (
             <Card>
               <EmptyState
+                icon={<CalendarDays className="size-5" />}
                 title="No scheduled tasks"
                 description="Give tasks a due date and they'll show up here."
               />
             </Card>
           )}
-        </div>
+        </m.div>
       )}
       {edit && (
         <TaskFormModal open onClose={() => setEdit(null)} projectId={edit.project_id} task={edit} />

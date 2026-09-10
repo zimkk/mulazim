@@ -91,13 +91,28 @@ export function Onboarding() {
   }
 
   return (
-    <Card className="mb-5 border-[--color-accent]/40">
-      <CardBody className="space-y-4">
-        <div className="flex items-start gap-3">
-          <Rocket className="mt-0.5 size-5 text-[--color-accent]" />
+    <Card className="relative mb-5 overflow-hidden border-[var(--color-accent)]/30" elevation="md">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-60"
+        style={{
+          background:
+            'radial-gradient(30rem 16rem at 100% 0%, color-mix(in srgb, var(--color-accent) 16%, transparent), transparent 70%)',
+        }}
+        aria-hidden
+      />
+      <CardBody className="relative space-y-5">
+        <div className="flex items-start gap-3.5">
+          <span
+            className="flex size-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
+            style={{
+              background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-2))',
+            }}
+          >
+            <Rocket className="size-5" />
+          </span>
           <div>
-            <h2 className="text-sm font-semibold">Welcome to Grid Manager</h2>
-            <p className="text-xs text-[--color-text-muted]">
+            <h2 className="text-base font-semibold tracking-tight">Welcome to Grid Manager</h2>
+            <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
               Your command center for every client, project and task. Let’s get you started.
             </p>
           </div>
@@ -105,7 +120,7 @@ export function Onboarding() {
 
         <div className="flex flex-wrap items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-[--color-text-muted]">
+            <label className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
               What should we call you?
             </label>
             <Input

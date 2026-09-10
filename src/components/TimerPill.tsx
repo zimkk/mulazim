@@ -27,21 +27,24 @@ export function TimerPill() {
   const elapsed = Math.max(0, Math.round((Date.now() - new Date(running.started_at).getTime()) / 1000))
 
   return (
-    <div className="flex items-center gap-2 rounded-md bg-[--color-accent]/12 px-2 py-1 text-xs">
-      <span className="size-1.5 animate-pulse rounded-full bg-[--color-accent]" />
+    <div className="flex items-center gap-2 rounded-full bg-[var(--color-accent-soft)] py-1 pr-1 pl-2.5 text-xs ring-1 ring-inset ring-[var(--color-accent)]/25">
+      <span className="relative flex size-1.5 shrink-0">
+        <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--color-accent)] opacity-70" />
+        <span className="relative inline-flex size-1.5 rounded-full bg-[var(--color-accent)]" />
+      </span>
       <Link
         to={running.task ? `/projects/${running.task.project_id}` : '#'}
-        className="max-w-[160px] truncate font-medium text-[--color-accent]"
+        className="max-w-[160px] truncate font-medium text-[var(--color-accent)] hover:underline"
       >
         {running.task?.title ?? 'Tracking'}
       </Link>
-      <span className="font-mono tabular-nums text-[--color-text]">{fmt(elapsed)}</span>
+      <span className="font-mono tabular-nums text-[var(--color-text)]">{fmt(elapsed)}</span>
       <button
         onClick={() => stop.mutate(running)}
-        className="rounded p-0.5 text-[--color-text-muted] hover:text-[--color-stale]"
+        className="rounded-full p-1 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-stale)]/15 hover:text-[var(--color-stale)]"
         aria-label="Stop timer"
       >
-        <Square className="size-3.5 fill-current" />
+        <Square className="size-3 fill-current" />
       </button>
     </div>
   )

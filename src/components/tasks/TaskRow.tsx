@@ -41,8 +41,8 @@ export function TaskRow({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 border-b border-[--color-border] px-3 py-2 last:border-b-0',
-        selected && 'bg-[--color-accent]/8',
+        'group flex items-center gap-3 border-b border-[var(--color-border)] px-3 py-2 transition-colors last:border-b-0',
+        selected ? 'bg-[var(--color-accent)]/8' : 'hover:bg-[var(--color-surface-2)]/50',
       )}
     >
       {onSelect && (
@@ -60,10 +60,10 @@ export function TaskRow({
       <button
         onClick={() => setStatus(done ? 'todo' : 'done')}
         className={cn(
-          'flex size-5 shrink-0 items-center justify-center rounded-full border',
+          'flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors',
           done
-            ? 'border-[--color-healthy] bg-[--color-healthy] text-white'
-            : 'border-[--color-border] text-transparent hover:border-[--color-accent]',
+            ? 'border-[var(--color-healthy)] bg-[var(--color-healthy)] text-white'
+            : 'border-[var(--color-text-subtle)] text-transparent hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 hover:text-[var(--color-accent)]',
         )}
         aria-label={done ? 'Reopen task' : 'Complete task'}
       >
@@ -75,17 +75,17 @@ export function TaskRow({
           onClick={() => onEdit?.(task)}
           className={cn(
             'block max-w-full truncate text-left text-sm',
-            done ? 'text-[--color-text-subtle] line-through' : 'text-[--color-text]',
+            done ? 'text-[var(--color-text-subtle)] line-through' : 'text-[var(--color-text)]',
           )}
         >
           {task.title}
         </button>
         {(showProject || tags.length > 0 || task.recurrence !== 'none') && (
-          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[--color-text-muted]">
+          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
             {showProject && projectName && 'project' in task && task.project && (
               <Link
                 to={`/projects/${task.project.id}`}
-                className="hover:text-[--color-text]"
+                className="hover:text-[var(--color-text)]"
                 onClick={(e) => e.stopPropagation()}
               >
                 {projectName}
@@ -93,7 +93,7 @@ export function TaskRow({
             )}
             {task.recurrence !== 'none' && <Repeat className="size-3" />}
             {tags.map((t) => (
-              <span key={t.id} className="rounded bg-[--color-surface-2] px-1">
+              <span key={t.id} className="rounded bg-[var(--color-surface-2)] px-1">
                 {t.name}
               </span>
             ))}
@@ -111,8 +111,8 @@ export function TaskRow({
           className={cn(
             'rounded p-1',
             isTiming
-              ? 'text-[--color-accent]'
-              : 'text-[--color-text-subtle] hover:text-[--color-text]',
+              ? 'text-[var(--color-accent)]'
+              : 'text-[var(--color-text-subtle)] hover:text-[var(--color-text)]',
           )}
           aria-label={isTiming ? 'Stop timer' : 'Start timer'}
           title={isTiming ? 'Stop timer' : 'Track time on this task'}

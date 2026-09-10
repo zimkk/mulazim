@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { Activity } from 'lucide-react'
 import { Page, PageHeader } from '@/components/layout/AppShell'
-import { Card } from '@/components/ui/Card'
+import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ErrorState } from '@/components/ui/States'
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline'
@@ -17,9 +18,10 @@ export default function ActivityPage() {
         <ErrorState message="Unable to load activity." onRetry={refetch} />
       ) : (
         <Card>
+          <CardHeader title="Timeline" icon={<Activity className="size-3.5" />} count={data?.length} />
           <ActivityTimeline items={data} loading={isLoading} />
           {data && data.length >= limit && (
-            <div className="border-t border-[--color-border] p-3 text-center">
+            <div className="border-t border-[var(--color-border)] p-3 text-center">
               <Button size="sm" onClick={() => setLimit((l) => l + 50)}>
                 Load more
               </Button>

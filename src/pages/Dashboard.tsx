@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
-import { AlertOctagon, CalendarClock, Flame, Sparkles } from 'lucide-react'
+import { AlertOctagon, CalendarClock, CircleDot, Flame, FolderKanban, Sparkles } from 'lucide-react'
 import { Page, PageHeader } from '@/components/layout/AppShell'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Badge, HealthBadge, PriorityBadge } from '@/components/ui/Badge'
+import { Stat } from '@/components/ui/Stat'
+import { m, stagger, fadeUp } from '@/lib/motion'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
 import { QuickAddTask } from '@/components/tasks/QuickAddTask'
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline'
@@ -51,23 +53,20 @@ export default function Dashboard() {
         return (
           <Card key={id}>
             <CardHeader
-              title={
-                <span className="flex items-center gap-1.5">
-                  <Sparkles className="size-4 text-[--color-accent]" /> Recommended focus
-                </span>
-              }
+              title="Recommended focus"
+              icon={<Sparkles className="size-3.5" />}
               count={d.recommendations.length}
             />
             {d.recommendations.length === 0 ? (
               <EmptyState title="Nothing pressing" description="No high-signal work right now — nice." />
             ) : (
-              <ol className="divide-y divide-[--color-border]">
+              <ol className="divide-y divide-[var(--color-border)]">
                 {d.recommendations.map(({ task, factors }, i) => (
                   <li key={task.id} className="flex items-start gap-3 px-4 py-2.5">
-                    <span className="text-sm font-semibold text-[--color-text-subtle]">{i + 1}</span>
+                    <span className="text-sm font-semibold text-[var(--color-text-subtle)]">{i + 1}</span>
                     <div className="min-w-0 flex-1">
                       <TaskLink task={task} />
-                      <p className="mt-0.5 text-xs text-[--color-text-muted]">
+                      <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
                         {task.project?.name}
                         {factors.length > 0 && ` · ${factors.join(', ')}`}
                       </p>
@@ -84,7 +83,7 @@ export default function Dashboard() {
           <TaskCard
             key={id}
             title="Overdue"
-            icon={<AlertOctagon className="size-4 text-[--color-overdue]" />}
+            icon={<AlertOctagon className="size-3.5" />}
             tasks={d.overdueTasks}
             emptyTitle="Nothing overdue"
           />
@@ -94,7 +93,7 @@ export default function Dashboard() {
           <TaskCard
             key={id}
             title="Due today & soon"
-            icon={<CalendarClock className="size-4 text-[--color-attention]" />}
+            icon={<CalendarClock className="size-3.5" />}
             tasks={d.dueSoonTasks}
             emptyTitle="Nothing due in the next few days"
           />
@@ -104,7 +103,7 @@ export default function Dashboard() {
           <TaskCard
             key={id}
             title="High & urgent"
-            icon={<Flame className="size-4 text-[--color-attention]" />}
+            icon={<Flame className="size-3.5" />}
             tasks={d.highPriorityTasks}
             emptyTitle="No high-priority work queued"
           />
@@ -161,6 +160,37 @@ export default function Dashboard() {
     )
   }
 
+  const stats = [
+    {
+      label: 'Overdue',
+      value: d.overdueTasks.length,
+      icon: <AlertOctagon className="size-5" />,
+      tone: 'stale' as const,
+      to: '/today',
+    },
+    {
+      label: 'Due today & soon',
+      value: d.dueSoonTasks.length,
+      icon: <CalendarClock className="size-5" />,
+      tone: 'attention' as const,
+      to: '/upcoming',
+    },
+    {
+      label: 'In progress',
+      value: d.inProgressTasks.length,
+      icon: <CircleDot className="size-5" />,
+      tone: 'accent' as const,
+      to: '/tasks',
+    },
+    {
+      label: 'Projects needing care',
+      value: d.attentionProjects.length + d.staleProjects.length,
+      icon: <FolderKanban className="size-5" />,
+      tone: 'neutral' as const,
+      to: '/projects',
+    },
+  ]
+
   return (
     <Page>
       <PageHeader
@@ -170,6 +200,21 @@ export default function Dashboard() {
 
       {showOnboarding && <Onboarding />}
 
+      {!showOnboarding && !d.isLoading && (
+        <m.div
+          variants={stagger}
+          initial="hidden"
+          animate="show"
+          className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4"
+        >
+          {stats.map((s) => (
+            <Link key={s.label} to={s.to} className="contents">
+              <Stat label={s.label} value={s.value} icon={s.icon} tone={s.tone} />
+            </Link>
+          ))}
+        </m.div>
+      )}
+
       <div className="mb-5">
         <QuickAddTask />
       </div>
@@ -177,7 +222,18 @@ export default function Dashboard() {
       {d.isLoading ? (
         <SkeletonRows rows={8} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{order.map(renderCard)}</div>
+        <m.div
+          variants={stagger}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 gap-4 lg:grid-cols-2"
+        >
+          {order.map((id) => (
+            <m.div key={id} variants={fadeUp} className={id === 'activity' ? 'lg:col-span-2' : undefined}>
+              {renderCard(id)}
+            </m.div>
+          ))}
+        </m.div>
       )}
     </Page>
   )
@@ -187,7 +243,7 @@ function TaskLink({ task }: { task: TaskWithProject }) {
   return (
     <Link
       to={task.project ? `/projects/${task.project.id}` : '#'}
-      className="text-sm text-[--color-text] hover:text-[--color-accent]"
+      className="text-sm text-[var(--color-text)] hover:text-[var(--color-accent)]"
     >
       {task.title}
     </Link>
@@ -207,19 +263,16 @@ function TaskCard({
 }) {
   return (
     <Card>
-      <CardHeader
-        title={<span className="flex items-center gap-1.5">{icon} {title}</span>}
-        count={tasks.length}
-      />
+      <CardHeader title={title} icon={icon} count={tasks.length} />
       {tasks.length === 0 ? (
         <EmptyState title={emptyTitle} />
       ) : (
-        <ul className="divide-y divide-[--color-border]">
+        <ul className="divide-y divide-[var(--color-border)]">
           {tasks.slice(0, 8).map((task) => (
             <li key={task.id} className="flex items-center gap-3 px-4 py-2.5">
               <div className="min-w-0 flex-1">
                 <TaskLink task={task} />
-                <p className="mt-0.5 text-xs text-[--color-text-muted]">{task.project?.name}</p>
+                <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{task.project?.name}</p>
               </div>
               {task.due_date && <Badge tone="neutral">{dueLabel(task.due_date)}</Badge>}
               <PriorityBadge priority={task.priority} />
@@ -249,17 +302,17 @@ function ProjectCard({
       {projects.length === 0 ? (
         <EmptyState title={emptyTitle} description={emptyDesc} />
       ) : (
-        <ul className="divide-y divide-[--color-border]">
+        <ul className="divide-y divide-[var(--color-border)]">
           {projects.slice(0, 8).map((p) => {
             const h = projectHealth(p, thresholds)
             return (
               <li key={p.id} className="flex items-center gap-3 px-4 py-2.5">
                 <Link
                   to={`/projects/${p.id}`}
-                  className="min-w-0 flex-1 text-sm text-[--color-text] hover:text-[--color-accent]"
+                  className="min-w-0 flex-1 text-sm text-[var(--color-text)] hover:text-[var(--color-accent)]"
                 >
                   <span className="truncate">{p.name}</span>
-                  <span className="mt-0.5 block text-xs text-[--color-text-muted]">
+                  <span className="mt-0.5 block text-xs text-[var(--color-text-muted)]">
                     {p.client?.name ? `${p.client.name} · ` : ''}
                     Active {relativeTime(p.last_activity_at)}
                   </span>

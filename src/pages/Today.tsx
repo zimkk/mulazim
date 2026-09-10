@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
-import { X } from 'lucide-react'
+import { AlertOctagon, CalendarCheck, Eye, ListChecks, Timer, X } from 'lucide-react'
+import { m, stagger, fadeUp } from '@/lib/motion'
 import { Page, PageHeader } from '@/components/layout/AppShell'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Field'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
+import { Progress } from '@/components/ui/Progress'
 import { TaskRow } from '@/components/tasks/TaskRow'
 import { TaskFormModal } from '@/components/tasks/TaskFormModal'
 import { QuickAddTask } from '@/components/tasks/QuickAddTask'
@@ -68,10 +70,12 @@ export default function Today() {
       ) : isLoading ? (
         <SkeletonRows rows={6} />
       ) : (
-        <div className="space-y-4">
-          <Card>
+        <m.div variants={stagger} initial="hidden" animate="show" className="space-y-4">
+          <m.div variants={fadeUp}>
+          <Card elevation="md">
             <CardHeader
               title="Today’s plan"
+              icon={<ListChecks className="size-3.5" />}
               count={plan.length}
               action={
                 addable.length > 0 && (
@@ -87,11 +91,12 @@ export default function Today() {
                       </Button>
                     )}
                     <Select
-                      className="h-7 w-40 py-0 text-xs"
+                      className="h-7 w-44 py-0 text-xs"
                       value=""
+                      aria-label="Add a task to today"
                       onChange={(e) => e.target.value && addToPlan(e.target.value)}
                     >
-                      <option value="">+ Add a task to today…</option>
+                      <option value="">Add to today…</option>
                       {addable.map((t) => (
                         <option key={t.id} value={t.id}>
                           {t.title}
@@ -104,18 +109,19 @@ export default function Today() {
             />
             {plan.length === 0 ? (
               <EmptyState
+                icon={<ListChecks className="size-5" />}
                 title="No plan yet"
                 description="Pick the handful of things that matter today."
               />
             ) : (
               plan.map((t) => (
-                <div key={t.id} className="flex items-center">
+                <div key={t.id} className="group/plan flex items-center">
                   <div className="min-w-0 flex-1">
                     <TaskRow task={t} onEdit={setEdit} showProject />
                   </div>
                   <button
                     onClick={() => removeFromPlan(t.id)}
-                    className="mr-2 shrink-0 text-[--color-text-subtle] hover:text-[--color-stale]"
+                    className="mr-2 shrink-0 rounded p-1 text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-stale)]/10 hover:text-[var(--color-stale)]"
                     aria-label="Remove from plan"
                   >
                     <X className="size-3.5" />
@@ -124,34 +130,60 @@ export default function Today() {
               ))
             )}
           </Card>
+          </m.div>
 
-          <Section title="Overdue" tasks={overdue} onEdit={setEdit} empty="Nothing overdue — nice." />
-          <Section title="Due today" tasks={dueToday} onEdit={setEdit} empty="Nothing due today." />
+          <Section
+            title="Overdue"
+            icon={<AlertOctagon className="size-3.5" />}
+            tasks={overdue}
+            onEdit={setEdit}
+            empty="Nothing overdue — nice."
+          />
+          <Section
+            title="Due today"
+            icon={<CalendarCheck className="size-3.5" />}
+            tasks={dueToday}
+            onEdit={setEdit}
+            empty="Nothing due today."
+          />
           <Section
             title="Worth a look"
+            icon={<Eye className="size-3.5" />}
             tasks={noDate}
             onEdit={setEdit}
             empty="No high-priority or in-progress work without a date."
           />
 
           {timeReport.data && timeReport.data.total > 0 && (
-            <Card>
-              <CardHeader title="Time this week" />
-              <div className="divide-y divide-[--color-border]">
-                <div className="flex justify-between px-4 py-2 text-sm font-medium">
-                  <span>Total</span>
-                  <span>{fmtMins(timeReport.data.total)}</span>
-                </div>
-                {timeReport.data.rows.map((r) => (
-                  <div key={r.name} className="flex justify-between px-4 py-1.5 text-xs text-[--color-text-muted]">
-                    <span className="truncate">{r.name}</span>
-                    <span>{fmtMins(r.minutes)}</span>
+            <m.div variants={fadeUp}>
+              <Card>
+                <CardHeader title="Time this week" icon={<Timer className="size-3.5" />} />
+                <div className="divide-y divide-[var(--color-border)]">
+                  <div className="flex items-baseline justify-between px-4 py-3">
+                    <span className="text-sm font-medium">Total</span>
+                    <span className="text-lg font-semibold tabular-nums tracking-tight text-[var(--color-accent)]">
+                      {fmtMins(timeReport.data.total)}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </Card>
+                  {timeReport.data.rows.map((r) => {
+                    const share = r.minutes / Math.max(1, timeReport.data!.total)
+                    return (
+                      <div key={r.name} className="px-4 py-2.5">
+                        <div className="mb-1.5 flex justify-between text-xs">
+                          <span className="truncate text-[var(--color-text)]">{r.name}</span>
+                          <span className="tabular-nums text-[var(--color-text-muted)]">
+                            {fmtMins(r.minutes)}
+                          </span>
+                        </div>
+                        <Progress value={share} />
+                      </div>
+                    )
+                  })}
+                </div>
+              </Card>
+            </m.div>
           )}
-        </div>
+        </m.div>
       )}
 
       {edit && (
@@ -163,26 +195,30 @@ export default function Today() {
 
 function Section({
   title,
+  icon,
   tasks,
   onEdit,
   empty,
 }: {
   title: string
+  icon?: React.ReactNode
   tasks: Task[]
   onEdit: (t: Task) => void
   empty: string
 }) {
   return (
-    <Card>
-      <CardHeader title={title} count={tasks.length} />
-      {tasks.length === 0 ? (
-        <EmptyState title={empty} />
-      ) : (
-        tasks
-          .slice()
-          .sort((a, b) => (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999'))
-          .map((t) => <TaskRow key={t.id} task={t} onEdit={onEdit} showProject />)
-      )}
-    </Card>
+    <m.div variants={fadeUp}>
+      <Card>
+        <CardHeader title={title} icon={icon} count={tasks.length} />
+        {tasks.length === 0 ? (
+          <EmptyState title={empty} />
+        ) : (
+          tasks
+            .slice()
+            .sort((a, b) => (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999'))
+            .map((t) => <TaskRow key={t.id} task={t} onEdit={onEdit} showProject />)
+        )}
+      </Card>
+    </m.div>
   )
 }

@@ -1,7 +1,22 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Check } from 'lucide-react'
+import {
+  AlertTriangle,
+  Bell,
+  Check,
+  Download,
+  Info,
+  Keyboard,
+  LayoutDashboard,
+  Palette,
+  RefreshCw,
+  SlidersHorizontal,
+  Timer,
+  Upload,
+  User,
+} from 'lucide-react'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
+import { cn } from '@/lib/utils/cn'
 import { Button } from '@/components/ui/Button'
 import { Input, Select } from '@/components/ui/Field'
 import { SettingRow, Segmented, Toggle } from '@/components/ui/Controls'
@@ -28,13 +43,22 @@ import { PRIORITIES } from '@/lib/constants'
 import type { Priority } from '@/types/database'
 
 const ACCENTS = ['blue', 'violet', 'green', 'amber', 'rose', 'slate'] as const
+/** Swatch colours mirror the `[data-accent]` palettes in index.css. */
 const ACCENT_HEX: Record<string, string> = {
-  blue: '#2563eb',
+  blue: '#5b5bf0',
   violet: '#7c3aed',
   green: '#059669',
   amber: '#d97706',
   rose: '#e11d48',
   slate: '#475569',
+}
+const ACCENT_HEX_2: Record<string, string> = {
+  blue: '#8b5cf6',
+  violet: '#a855f7',
+  green: '#10b981',
+  amber: '#f59e0b',
+  rose: '#f43f5e',
+  slate: '#64748b',
 }
 
 /* ----------------------------- Account ----------------------------- */
@@ -83,7 +107,7 @@ export function AccountSection() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader title="Profile" />
+        <CardHeader title="Profile" icon={<User className="size-3.5" />} />
         <CardBody>
           <SettingRow
             title="Avatar"
@@ -95,7 +119,7 @@ export function AccountSection() {
                   url={profile?.avatar_url}
                   className="size-9"
                 />
-                <label className="cursor-pointer text-xs text-[--color-accent] hover:underline">
+                <label className="cursor-pointer text-xs text-[var(--color-accent)] hover:underline">
                   {uploadAvatar.isPending ? 'Uploading…' : 'Change'}
                   <input
                     type="file"
@@ -118,7 +142,7 @@ export function AccountSection() {
           <SettingRow
             title="Email"
             description="Your sign-in address. Data syncs to any device using this account."
-            control={<span className="text-sm text-[--color-text-muted]">{email}</span>}
+            control={<span className="text-sm text-[var(--color-text-muted)]">{email}</span>}
           />
           <SettingRow
             title="Display name"
@@ -169,10 +193,10 @@ export function AccountSection() {
         </CardBody>
       </Card>
 
-      <Card className="border-[--color-stale]/40">
+      <Card className="border-[var(--color-stale)]/40">
         <CardHeader
           title={
-            <span className="flex items-center gap-1.5 text-[--color-stale]">
+            <span className="flex items-center gap-1.5 text-[var(--color-stale)]">
               <AlertTriangle className="size-4" /> Danger zone
             </span>
           }
@@ -216,7 +240,7 @@ export function AppearanceSection() {
 
   return (
     <Card>
-      <CardHeader title="Appearance" />
+      <CardHeader title="Appearance" icon={<Palette className="size-3.5" />} />
       <CardBody>
         <SettingRow
           title="Theme"
@@ -235,16 +259,23 @@ export function AppearanceSection() {
         <SettingRow
           title="Accent colour"
           control={
-            <div className="flex gap-1.5">
+            <div className="flex gap-2">
               {ACCENTS.map((c) => (
                 <button
                   key={c}
                   aria-label={c}
                   onClick={() => set({ accent: c })}
-                  className="flex size-6 items-center justify-center rounded-full border border-[--color-border]"
-                  style={{ background: ACCENT_HEX[c] }}
+                  className={cn(
+                    'flex size-7 items-center justify-center rounded-full shadow-xs transition-transform hover:scale-110',
+                    a.accent === c
+                      ? 'ring-2 ring-[var(--color-text)] ring-offset-2 ring-offset-[var(--color-surface)]'
+                      : 'ring-1 ring-inset ring-black/10',
+                  )}
+                  style={{
+                    background: `linear-gradient(135deg, ${ACCENT_HEX[c]}, ${ACCENT_HEX_2[c]})`,
+                  }}
                 >
-                  {a.accent === c && <Check className="size-3.5 text-white" />}
+                  {a.accent === c && <Check className="size-3.5 text-white drop-shadow" />}
                 </button>
               ))}
             </div>
@@ -310,7 +341,7 @@ export function GeneralSection() {
 
   return (
     <Card>
-      <CardHeader title="General" />
+      <CardHeader title="General" icon={<SlidersHorizontal className="size-3.5" />} />
       <CardBody>
         <SettingRow
           title="Open on launch"
@@ -429,7 +460,7 @@ export function NotificationsSection() {
 
   return (
     <Card>
-      <CardHeader title="Notifications" />
+      <CardHeader title="Notifications" icon={<Bell className="size-3.5" />} />
       <CardBody>
         <SettingRow
           title="Desktop notifications"
@@ -498,7 +529,7 @@ export function NotificationsSection() {
                 onChange={(e) => set({ quietHoursStart: e.target.value })}
                 className="w-28"
               />
-              <span className="text-xs text-[--color-text-muted]">to</span>
+              <span className="text-xs text-[var(--color-text-muted)]">to</span>
               <Input
                 type="time"
                 value={n.quietHoursEnd}
@@ -539,14 +570,14 @@ export function WorkflowSection() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader title="Stale-project thresholds" />
+        <CardHeader title="Stale-project thresholds" icon={<Timer className="size-3.5" />} />
         <CardBody>
-          <p className="mb-2 text-xs text-[--color-text-muted]">
+          <p className="mb-2 text-xs text-[var(--color-text-muted)]">
             Days of inactivity before an active project is flagged.
           </p>
           <div className="grid grid-cols-3 gap-3">
             {(['active', 'normal', 'attention'] as const).map((k) => (
-              <label key={k} className="text-xs text-[--color-text-muted]">
+              <label key={k} className="text-xs text-[var(--color-text-muted)]">
                 {k} ≤
                 <Input
                   type="number"
@@ -577,12 +608,12 @@ export function WorkflowSection() {
       </Card>
 
       <Card>
-        <CardHeader title="Dashboard cards" />
+        <CardHeader title="Dashboard cards" icon={<LayoutDashboard className="size-3.5" />} />
         <CardBody>
-          <p className="mb-2 text-xs text-[--color-text-muted]">
+          <p className="mb-2 text-xs text-[var(--color-text-muted)]">
             Choose which cards appear and their order.
           </p>
-          <ul className="divide-y divide-[--color-border]">
+          <ul className="divide-y divide-[var(--color-border)]">
             {(DASHBOARD_CARD_IDS as readonly DashboardCardId[]).map((id) => {
               const on = w.dashboardCards.includes(id)
               return (
@@ -590,14 +621,14 @@ export function WorkflowSection() {
                   <Toggle checked={on} onChange={(v) => toggleCard(id, v)} />
                   <span className="flex-1 text-sm">{DASHBOARD_CARD_LABEL[id]}</span>
                   <button
-                    className="px-1 text-xs text-[--color-text-muted] hover:text-[--color-text] disabled:opacity-30"
+                    className="px-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:opacity-30"
                     disabled={!on}
                     onClick={() => moveCard(id, -1)}
                   >
                     ↑
                   </button>
                   <button
-                    className="px-1 text-xs text-[--color-text-muted] hover:text-[--color-text] disabled:opacity-30"
+                    className="px-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:opacity-30"
                     disabled={!on}
                     onClick={() => moveCard(id, 1)}
                   >
@@ -638,19 +669,19 @@ export function KeyboardSection() {
 
   return (
     <Card>
-      <CardHeader title="Keyboard shortcuts" />
+      <CardHeader title="Keyboard shortcuts" icon={<Keyboard className="size-3.5" />} />
       <CardBody>
-        <ul className="divide-y divide-[--color-border]">
+        <ul className="divide-y divide-[var(--color-border)]">
           {(Object.keys(KEYBINDING_LABEL) as KeybindingAction[]).map((action) => (
             <li key={action} className="flex items-center justify-between py-2.5 text-sm">
-              <span className="text-[--color-text-muted]">{KEYBINDING_LABEL[action]}</span>
+              <span className="text-[var(--color-text-muted)]">{KEYBINDING_LABEL[action]}</span>
               <button
                 onClick={() => setRecording(action)}
                 className={
                   'rounded border px-2 py-0.5 text-xs ' +
                   (recording === action
-                    ? 'border-[--color-accent] text-[--color-accent]'
-                    : 'border-[--color-border] bg-[--color-surface-2]')
+                    ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                    : 'border-[var(--color-border)] bg-[var(--color-surface-2)]')
                 }
               >
                 {recording === action ? 'Press keys…' : prettyBinding(s.keybindings[action])}
@@ -658,21 +689,21 @@ export function KeyboardSection() {
             </li>
           ))}
           <li className="flex items-center justify-between py-2.5 text-sm">
-            <span className="text-[--color-text-muted]">Settings</span>
-            <kbd className="rounded border border-[--color-border] bg-[--color-surface-2] px-2 py-0.5 text-xs">
+            <span className="text-[var(--color-text-muted)]">Settings</span>
+            <kbd className="rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-0.5 text-xs">
               {prettyBinding('mod+,')}
             </kbd>
           </li>
           <li className="flex items-center justify-between py-2.5 text-sm">
-            <span className="text-[--color-text-muted]">Close a dialog</span>
-            <kbd className="rounded border border-[--color-border] bg-[--color-surface-2] px-2 py-0.5 text-xs">
+            <span className="text-[var(--color-text-muted)]">Close a dialog</span>
+            <kbd className="rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-0.5 text-xs">
               Esc
             </kbd>
           </li>
         </ul>
         <button
           onClick={() => update({ keybindings: { ...DEFAULT_KEYBINDINGS } })}
-          className="mt-3 text-xs text-[--color-text-muted] hover:text-[--color-text]"
+          className="mt-3 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
         >
           Reset to defaults
         </button>
@@ -722,9 +753,9 @@ export function DataSection() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader title="Export your data" />
+        <CardHeader title="Export your data" icon={<Download className="size-3.5" />} />
         <CardBody className="space-y-3">
-          <p className="text-xs text-[--color-text-muted]">
+          <p className="text-xs text-[var(--color-text-muted)]">
             Download every client, project, task and activity record. Your data always belongs to you.
           </p>
           <div className="flex gap-2">
@@ -738,15 +769,15 @@ export function DataSection() {
       </Card>
 
       <Card>
-        <CardHeader title="Import" />
+        <CardHeader title="Import" icon={<Upload className="size-3.5" />} />
         <CardBody className="space-y-3">
-          <p className="text-xs text-[--color-text-muted]">
+          <p className="text-xs text-[var(--color-text-muted)]">
             Load a JSON export. Rows are added alongside your existing data (never overwritten),
             with client → project → task links preserved.
           </p>
           <label
             className={
-              'inline-flex h-9 cursor-pointer items-center rounded-md border border-[--color-border] bg-[--color-surface] px-3.5 text-sm font-medium hover:bg-[--color-surface-2] ' +
+              'inline-flex h-9 cursor-pointer items-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-sm font-medium hover:bg-[var(--color-surface-2)] ' +
               (importing ? 'pointer-events-none opacity-60' : '')
             }
           >
@@ -779,9 +810,9 @@ export function UpdatesSection() {
 
   return (
     <Card>
-      <CardHeader title="Updates & startup" />
+      <CardHeader title="Updates & startup" icon={<RefreshCw className="size-3.5" />} />
       <CardBody className="space-y-1">
-        <p className="pb-2 text-xs text-[--color-text-muted]">
+        <p className="pb-2 text-xs text-[var(--color-text-muted)]">
           The app checks for updates on launch. When one is available you’ll be asked before it
           installs.
         </p>
@@ -828,16 +859,16 @@ export function AboutSection() {
 
   return (
     <Card>
-      <CardHeader title="About Grid Manager" />
+      <CardHeader title="About Grid Manager" icon={<Info className="size-3.5" />} />
       <CardBody className="space-y-2 text-sm">
         <p>
-          <span className="text-[--color-text-muted]">Version</span> {version}
+          <span className="text-[var(--color-text-muted)]">Version</span> {version}
         </p>
-        <p className="text-[--color-text-muted]">
+        <p className="text-[var(--color-text-muted)]">
           A personal, cross-platform project & task command center. Cloud-backed by Supabase,
           self-updating via GitHub Releases.
         </p>
-        <p className="text-xs text-[--color-text-subtle]">
+        <p className="text-xs text-[var(--color-text-subtle)]">
           Built with Tauri, React, TypeScript and Tailwind. See ARCHITECTURE.md in the repo.
         </p>
       </CardBody>

@@ -24,11 +24,13 @@ export class ErrorBoundary extends Component<Props, State> {
   override render(): ReactNode {
     if (this.state.error) {
       return (
-        <div className="flex h-full items-center justify-center">
-          <ErrorState
-            message={this.state.error.message || 'The app hit an unexpected error.'}
-            onRetry={() => this.setState({ error: null })}
-          />
+        <div className="flex h-full items-center justify-center p-6">
+          <div className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg">
+            <ErrorState
+              message={this.state.error.message || 'The app hit an unexpected error.'}
+              onRetry={() => this.setState({ error: null })}
+            />
+          </div>
         </div>
       )
     }

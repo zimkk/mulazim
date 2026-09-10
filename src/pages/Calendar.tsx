@@ -11,7 +11,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { CalendarRange, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Page, PageHeader } from '@/components/layout/AppShell'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -71,10 +71,10 @@ export default function Calendar() {
         <SkeletonRows rows={8} />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-          <Card>
-            <div className="grid grid-cols-7 border-b border-[--color-border] text-center text-xs font-medium text-[--color-text-muted]">
+          <Card className="overflow-hidden">
+            <div className="grid grid-cols-7 rounded-t-xl border-b border-[var(--color-border)] bg-[var(--color-surface-2)]/40 text-center text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--color-text-subtle)]">
               {weekdayLabels.map((l) => (
-                <div key={l} className="py-2">
+                <div key={l} className="py-2.5">
                   {l}
                 </div>
               ))}
@@ -83,22 +83,26 @@ export default function Calendar() {
               {days.map((d) => {
                 const key = format(d, 'yyyy-MM-dd')
                 const tasks = byDay.get(key) ?? []
-                const hasOverdue = tasks.some((t) => isOverdue(t.due_date))
+                const outside = !isSameMonth(d, month)
+                const isSel = isSameDay(d, selected)
                 return (
                   <button
                     key={key}
                     onClick={() => setSelected(d)}
                     className={cn(
-                      'flex min-h-[84px] flex-col items-start gap-1 border-b border-r border-[--color-border] p-1.5 text-left last:border-r-0',
-                      !isSameMonth(d, month) && 'bg-[--color-surface-2]/40 text-[--color-text-subtle]',
-                      isSameDay(d, selected) && 'ring-1 ring-inset ring-[--color-accent]',
+                      'relative flex min-h-[92px] flex-col items-start gap-1 border-b border-r border-[var(--color-border)] p-1.5 text-left transition-colors',
+                      '[&:nth-child(7n)]:border-r-0 hover:bg-[var(--color-surface-2)]/60',
+                      outside && 'bg-[var(--color-surface-2)]/30 text-[var(--color-text-subtle)]',
+                      isSel && 'bg-[var(--color-accent-soft)] ring-1 ring-inset ring-[var(--color-accent)]',
                     )}
                   >
                     <span
                       className={cn(
-                        'text-xs',
-                        isToday(d) &&
-                          'flex size-5 items-center justify-center rounded-full bg-[--color-accent] text-[--color-accent-fg]',
+                        'flex size-5 items-center justify-center rounded-full text-xs font-medium',
+                        isToday(d)
+                          ? 'bg-[var(--color-accent)] text-[var(--color-accent-fg)]'
+                          : 'text-[var(--color-text)]',
+                        outside && !isToday(d) && 'text-[var(--color-text-subtle)]',
                       )}
                     >
                       {format(d, 'd')}
@@ -107,17 +111,25 @@ export default function Calendar() {
                       <span
                         key={t.id}
                         className={cn(
-                          'w-full truncate rounded px-1 text-[10px]',
-                          hasOverdue && isOverdue(t.due_date)
-                            ? 'bg-[--color-overdue]/15 text-[--color-overdue]'
-                            : 'bg-[--color-surface-2] text-[--color-text-muted]',
+                          'flex w-full items-center gap-1 truncate rounded px-1 py-px text-[0.625rem]',
+                          isOverdue(t.due_date)
+                            ? 'bg-[var(--color-overdue)]/15 text-[var(--color-overdue)]'
+                            : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)]',
                         )}
                       >
-                        {t.title}
+                        <span
+                          className={cn(
+                            'size-1 shrink-0 rounded-full',
+                            isOverdue(t.due_date)
+                              ? 'bg-[var(--color-overdue)]'
+                              : 'bg-[var(--color-text-subtle)]',
+                          )}
+                        />
+                        <span className="truncate">{t.title}</span>
                       </span>
                     ))}
                     {tasks.length > 3 && (
-                      <span className="text-[10px] text-[--color-text-subtle]">
+                      <span className="px-1 text-[0.625rem] font-medium text-[var(--color-text-subtle)]">
                         +{tasks.length - 3} more
                       </span>
                     )}
@@ -127,10 +139,14 @@ export default function Calendar() {
             </div>
           </Card>
 
-          <Card className="h-fit">
-            <CardHeader title={format(selected, 'EEEE, MMM d')} count={selectedTasks.length} />
+          <Card className="h-fit" elevation="md">
+            <CardHeader
+              title={format(selected, 'EEEE, MMM d')}
+              icon={<CalendarRange className="size-3.5" />}
+              count={selectedTasks.length}
+            />
             {selectedTasks.length === 0 ? (
-              <EmptyState title="Nothing due" />
+              <EmptyState icon={<CalendarRange className="size-5" />} title="Nothing due" />
             ) : (
               selectedTasks
                 .slice()

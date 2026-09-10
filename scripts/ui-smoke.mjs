@@ -367,7 +367,9 @@ try {
   await shot('06-settings')
 
   // --- Reload keeps the session + restores synced appearance ---
-  await new Promise((r) => setTimeout(r, 900)) // let the settings persist debounce flush
+  // The settings writer debounces 500ms and then round-trips to Supabase; give
+  // both a comfortable margin or the reload can race the write.
+  await new Promise((r) => setTimeout(r, 2000))
   await page.reload({ waitUntil: 'networkidle2' })
   await page.waitForSelector('#root *', { timeout: 15000 })
   const bouncedToLogin = await page.evaluate(() => location.hash.includes('login'))

@@ -31,21 +31,27 @@ export default function Trash() {
         <SkeletonRows rows={4} />
       ) : !data || data.length === 0 ? (
         <Card>
-          <EmptyState title="Trash is empty" description="Deleted clients, projects and tasks show up here." />
+          <EmptyState
+            icon={<Trash2 className="size-5" />}
+            title="Trash is empty"
+            description="Deleted clients, projects and tasks show up here."
+          />
         </Card>
       ) : (
-        <Card>
+        <Card className="overflow-hidden">
           {data.map((item) => {
             const Icon = ICON[item.kind]
             return (
               <div
                 key={`${item.kind}-${item.id}`}
-                className="flex items-center gap-3 border-b border-[--color-border] px-4 py-2.5 last:border-b-0"
+                className="flex items-center gap-3 border-b border-[var(--color-border)] px-4 py-3 transition-colors last:border-b-0 hover:bg-[var(--color-surface-2)]/50"
               >
-                <Icon className="size-4 shrink-0 text-[--color-text-subtle]" />
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-2)] text-[var(--color-text-subtle)] ring-1 ring-inset ring-[var(--color-border)]">
+                  <Icon className="size-4" />
+                </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-[--color-text]">{item.label}</p>
-                  <p className="text-xs text-[--color-text-muted]">
+                  <p className="truncate text-sm text-[var(--color-text)]">{item.label}</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">
                     {item.kind} · deleted {relativeTime(item.deleted_at)}
                   </p>
                 </div>

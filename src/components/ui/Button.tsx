@@ -2,8 +2,8 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
-type Size = 'sm' | 'md'
+type Variant = 'primary' | 'secondary' | 'ghost' | 'subtle' | 'danger'
+type Size = 'sm' | 'md' | 'icon'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
@@ -14,16 +14,22 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    'bg-[--color-accent] text-[--color-accent-fg] hover:bg-[--color-accent-hover] disabled:opacity-50',
+    'bg-[var(--color-accent)] text-[var(--color-accent-fg)] shadow-xs hover:bg-[var(--color-accent-hover)] ' +
+    'hover:shadow-sm disabled:opacity-50',
   secondary:
-    'bg-[--color-surface] text-[--color-text] border border-[--color-border] hover:bg-[--color-surface-2] disabled:opacity-50',
-  ghost: 'text-[--color-text-muted] hover:bg-[--color-surface-2] hover:text-[--color-text]',
-  danger: 'bg-[--color-stale] text-white hover:opacity-90 disabled:opacity-50',
+    'bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] shadow-xs ' +
+    'hover:bg-[var(--color-surface-2)] hover:border-[var(--color-border-strong)] disabled:opacity-50',
+  ghost:
+    'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)]',
+  subtle:
+    'bg-[var(--color-accent-soft)] text-[var(--color-accent)] hover:brightness-95 dark:hover:brightness-110 disabled:opacity-50',
+  danger: 'bg-[var(--color-stale)] text-white shadow-xs hover:brightness-95 disabled:opacity-50',
 }
 
 const SIZES: Record<Size, string> = {
-  sm: 'h-7 px-2.5 text-xs gap-1.5',
-  md: 'h-9 px-3.5 text-sm gap-2',
+  sm: 'h-7 px-2.5 text-xs gap-1.5 rounded-md',
+  md: 'h-9 px-3.5 text-sm gap-2 rounded-lg',
+  icon: 'size-9 rounded-lg',
 }
 
 export function Button({
@@ -39,9 +45,9 @@ export function Button({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center rounded-md font-medium transition-colors',
-        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--color-accent]',
-        'disabled:cursor-not-allowed',
+        'inline-flex select-none items-center justify-center font-medium transition-all duration-150',
+        'active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]',
+        'disabled:pointer-events-none disabled:cursor-not-allowed',
         VARIANTS[variant],
         SIZES[size],
         className,

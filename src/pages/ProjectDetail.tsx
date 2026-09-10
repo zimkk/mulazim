@@ -1,11 +1,24 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Archive, CheckCircle2, Pencil, Pin, Plus, Trash2 } from 'lucide-react'
+import {
+  ArrowLeft,
+  Archive,
+  CheckCircle2,
+  ListChecks,
+  Activity as ActivityIcon,
+  NotebookPen,
+  Pencil,
+  Pin,
+  Plus,
+  Trash2,
+} from 'lucide-react'
 import { Page } from '@/components/layout/AppShell'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Field'
 import { Badge, HealthBadge, PriorityBadge } from '@/components/ui/Badge'
+import { Segmented } from '@/components/ui/Controls'
+import { ProgressRing } from '@/components/ui/Progress'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
 import { useToast } from '@/components/Toast'
 import { TaskRow } from '@/components/tasks/TaskRow'
@@ -77,6 +90,7 @@ export default function ProjectDetail() {
   const health = projectHealth(p, thresholds)
   const openTasks = (tasks.data ?? []).filter((t) => t.status !== 'done' && t.status !== 'cancelled')
   const doneTasks = (tasks.data ?? []).filter((t) => t.status === 'done' || t.status === 'cancelled')
+  const totalTasks = openTasks.length + doneTasks.length
 
   function onDropReorder(targetId: string) {
     if (!dragId || dragId === targetId) return setDragId(null)
@@ -120,32 +134,50 @@ export default function ProjectDetail() {
     <Page>
       <Link
         to="/projects"
-        className="mb-3 inline-flex items-center gap-1 text-xs text-[--color-text-muted] hover:text-[--color-text]"
+        className="mb-3 inline-flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
       >
         <ArrowLeft className="size-3.5" /> Projects
       </Link>
 
       <div className="mb-5 flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold">{p.name}</h1>
-            <HealthBadge health={health.health} label={health.label} />
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[--color-text-muted]">
-            <Badge tone="neutral">{p.type}</Badge>
-            <Badge tone="neutral">{PROJECT_STATUS_LABEL[p.status]}</Badge>
-            <PriorityBadge priority={p.priority} />
-            {p.client && (
-              <Link to={`/clients/${p.client.id}`} className="hover:text-[--color-text]">
-                {p.client.name}
-              </Link>
+        <div className="flex min-w-0 items-start gap-3.5">
+          <span
+            className="mt-1 h-11 w-1.5 shrink-0 rounded-full"
+            style={{ background: p.color || 'var(--color-accent)' }}
+            aria-hidden
+          />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-[1.375rem] font-semibold tracking-tight">{p.name}</h1>
+              <HealthBadge health={health.health} label={health.label} />
+              {totalTasks > 0 && (
+                <span className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
+                  <ProgressRing value={doneTasks.length / totalTasks} size={20} stroke={2.5} />
+                  {Math.round((doneTasks.length / totalTasks) * 100)}% done
+                </span>
+              )}
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-muted)]">
+              <Badge tone="neutral">{p.type}</Badge>
+              <Badge tone="neutral">{PROJECT_STATUS_LABEL[p.status]}</Badge>
+              <PriorityBadge priority={p.priority} />
+              {p.client && (
+                <Link
+                  to={`/clients/${p.client.id}`}
+                  className="transition-colors hover:text-[var(--color-accent)]"
+                >
+                  {p.client.name}
+                </Link>
+              )}
+              {p.deadline && <span>{dueLabel(p.deadline)}</span>}
+              <span>Active {relativeTime(p.last_activity_at)}</span>
+            </div>
+            {health.reasons.length > 0 && (
+              <p className="mt-1.5 text-xs text-[var(--color-text-subtle)]">
+                {health.reasons.join(' · ')}
+              </p>
             )}
-            {p.deadline && <span>{dueLabel(p.deadline)}</span>}
-            <span>Active {relativeTime(p.last_activity_at)}</span>
           </div>
-          {health.reasons.length > 0 && (
-            <p className="mt-1.5 text-xs text-[--color-text-muted]">{health.reasons.join(' · ')}</p>
-          )}
         </div>
         <div className="flex flex-wrap justify-end gap-2">
           <Button
@@ -184,7 +216,7 @@ export default function ProjectDetail() {
 
       {p.description && (
         <Card className="mb-4">
-          <CardBody className="text-sm whitespace-pre-wrap text-[--color-text-muted]">
+          <CardBody className="text-sm whitespace-pre-wrap text-[var(--color-text-muted)]">
             {p.description}
           </CardBody>
         </Card>
@@ -196,26 +228,20 @@ export default function ProjectDetail() {
             <CardHeader
               title="Tasks"
               count={openTasks.length}
+              icon={<ListChecks className="size-3.5" />}
               action={
                 <div className="flex items-center gap-2">
-                  <div className="flex rounded-md border border-[--color-border] p-0.5 text-xs">
-                    {(['list', 'board'] as const).map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => setTaskView(v)}
-                        className={
-                          'rounded px-2 py-0.5 capitalize ' +
-                          (taskView === v
-                            ? 'bg-[--color-accent] text-[--color-accent-fg]'
-                            : 'text-[--color-text-muted]')
-                        }
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </div>
+                  <Segmented
+                    value={taskView}
+                    onChange={setTaskView}
+                    options={[
+                      { value: 'list', label: <span className="capitalize">list</span> },
+                      { value: 'board', label: <span className="capitalize">board</span> },
+                    ]}
+                  />
                   <Button
                     size="sm"
+                    variant="primary"
                     icon={<Plus className="size-3.5" />}
                     onClick={() => setTaskModal({ open: true })}
                   >
@@ -224,7 +250,7 @@ export default function ProjectDetail() {
                 </div>
               }
             />
-            <div className="border-b border-[--color-border] p-3">
+            <div className="border-b border-[var(--color-border)] p-3">
               <QuickAddTask projectId={p.id} />
             </div>
             {tasks.isLoading ? (
@@ -251,7 +277,7 @@ export default function ProjectDetail() {
                     'group flex items-center ' + (dragId === t.id ? 'opacity-40' : '')
                   }
                 >
-                  <GripVertical className="ml-1 size-3.5 shrink-0 cursor-grab text-[--color-text-subtle] opacity-0 group-hover:opacity-100" />
+                  <GripVertical className="ml-1 size-3.5 shrink-0 cursor-grab text-[var(--color-text-subtle)] opacity-0 group-hover:opacity-100" />
                   <div className="min-w-0 flex-1">
                     <TaskRow task={t} onEdit={(task) => setTaskModal({ open: true, task })} />
                   </div>
@@ -259,11 +285,11 @@ export default function ProjectDetail() {
               ))
             )}
             {taskView === 'list' && doneTasks.length > 0 && (
-              <details className="px-3 py-2">
-                <summary className="cursor-pointer text-xs text-[--color-text-muted]">
+              <details className="border-t border-[var(--color-border)] px-3 py-2">
+                <summary className="cursor-pointer rounded px-1 py-1 text-xs font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]">
                   {doneTasks.length} completed
                 </summary>
-                <div className="mt-1">
+                <div className="mt-1 opacity-70">
                   {doneTasks.map((t) => (
                     <TaskRow
                       key={t.id}
@@ -277,7 +303,7 @@ export default function ProjectDetail() {
           </Card>
 
           <Card>
-            <CardHeader title="Activity" />
+            <CardHeader title="Activity" icon={<ActivityIcon className="size-3.5" />} />
             <ActivityTimeline
               items={activity.data}
               loading={activity.isLoading}
@@ -287,7 +313,7 @@ export default function ProjectDetail() {
         </div>
 
         <Card className="h-fit">
-          <CardHeader title="Notes" />
+          <CardHeader title="Notes" icon={<NotebookPen className="size-3.5" />} />
           <CardBody className="space-y-2">
             <Textarea
               value={note}

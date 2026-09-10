@@ -231,8 +231,8 @@ export function TaskFormModal({
                   className={
                     'rounded px-1.5 py-0.5 text-xs ' +
                     (tagIds.includes(t.id)
-                      ? 'bg-[--color-accent] text-[--color-accent-fg]'
-                      : 'bg-[--color-surface-2] text-[--color-text-muted]')
+                      ? 'bg-[var(--color-accent)] text-[var(--color-accent-fg)]'
+                      : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)]')
                   }
                 >
                   {t.name}
@@ -277,9 +277,9 @@ function SubtaskEditor({ taskId }: { taskId: string }) {
   const total = subs?.length ?? 0
 
   return (
-    <div className="mt-4 border-t border-[--color-border] pt-3">
+    <div className="mt-4 border-t border-[var(--color-border)] pt-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-medium text-[--color-text-muted]">Checklist</span>
+        <span className="text-xs font-medium text-[var(--color-text-muted)]">Checklist</span>
         {total > 0 && (
           <Badge tone={done === total ? 'healthy' : 'neutral'}>
             {done}/{total}
@@ -296,14 +296,14 @@ function SubtaskEditor({ taskId }: { taskId: string }) {
             />
             <span
               className={
-                'flex-1 text-sm ' + (s.done ? 'text-[--color-text-subtle] line-through' : '')
+                'flex-1 text-sm ' + (s.done ? 'text-[var(--color-text-subtle)] line-through' : '')
               }
             >
               {s.title}
             </span>
             <button
               onClick={() => remove.mutate(s.id)}
-              className="text-[--color-text-subtle] hover:text-[--color-stale]"
+              className="text-[var(--color-text-subtle)] hover:text-[var(--color-stale)]"
             >
               <X className="size-3.5" />
             </button>

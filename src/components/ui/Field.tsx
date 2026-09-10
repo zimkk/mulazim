@@ -7,13 +7,13 @@ import type {
 import { cn } from '@/lib/utils/cn'
 
 const baseControl =
-  'w-full rounded-md border border-[--color-border] bg-[--color-surface] px-3 py-1.5 text-sm text-[--color-text] ' +
-  'placeholder:text-[--color-text-subtle] focus-visible:outline-2 focus-visible:outline-offset-0 ' +
-  'focus-visible:outline-[--color-accent] disabled:opacity-50'
+  'w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] shadow-xs ' +
+  'transition-colors placeholder:text-[var(--color-text-subtle)] focus-visible:border-[var(--color-accent)] ' +
+  'focus-visible:outline-0 focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/25 disabled:opacity-50'
 
 export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="mb-1 block text-xs font-medium text-[--color-text-muted]">
+    <label htmlFor={htmlFor} className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
       {children}
     </label>
   )

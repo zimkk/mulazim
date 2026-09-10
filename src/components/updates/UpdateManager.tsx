@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Download, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Progress } from '@/components/ui/Progress'
 
 type Phase = 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error' | 'uptodate'
 
@@ -80,17 +81,20 @@ export function UpdateManager({ compact = false }: { compact?: boolean }) {
       return (
         <button
           onClick={install}
-          className="flex items-center gap-1.5 rounded-md bg-[--color-accent]/12 px-2 py-1 text-xs font-medium text-[--color-accent]"
+          className="flex w-full items-center gap-1.5 rounded-lg bg-[var(--color-accent-soft)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-accent)] ring-1 ring-inset ring-[var(--color-accent)]/25 transition-colors hover:brightness-105"
         >
-          <Download className="size-3.5" /> Update to {state.version}
+          <Download className="size-3.5 shrink-0" /> Update to {state.version}
         </button>
       )
     }
     if (state.phase === 'downloading') {
       return (
-        <span className="text-xs text-[--color-text-muted]">
-          Downloading update… {state.progress ?? 0}%
-        </span>
+        <div className="space-y-1.5 px-0.5">
+          <span className="text-xs text-[var(--color-text-muted)]">
+            Downloading… {state.progress ?? 0}%
+          </span>
+          <Progress value={(state.progress ?? 0) / 100} />
+        </div>
       )
     }
     return null
@@ -108,39 +112,41 @@ export function UpdateManager({ compact = false }: { compact?: boolean }) {
           Check for updates
         </Button>
         {state.phase === 'uptodate' && (
-          <span className="text-xs text-[--color-text-muted]">
+          <span className="text-xs text-[var(--color-text-muted)]">
             {state.message ?? 'You are on the latest version.'}
           </span>
         )}
       </div>
 
       {state.phase === 'available' && (
-        <div className="rounded-md border border-[--color-border] p-3">
-          <p className="mb-2 text-sm">
+        <div className="rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent-soft)] p-3.5">
+          <p className="mb-2.5 text-sm">
             Update available — <strong>version {state.version}</strong>
           </p>
-          <Button variant="primary" size="sm" onClick={install} icon={<Download className="size-3.5" />}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={install}
+            icon={<Download className="size-3.5" />}
+          >
             Install update
           </Button>
         </div>
       )}
 
       {state.phase === 'downloading' && (
-        <div>
-          <p className="mb-1 text-xs text-[--color-text-muted]">Downloading update…</p>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-[--color-surface-2]">
-            <div
-              className="h-full bg-[--color-accent] transition-all"
-              style={{ width: `${state.progress ?? 10}%` }}
-            />
-          </div>
+        <div className="space-y-1.5">
+          <p className="text-xs text-[var(--color-text-muted)]">
+            Downloading update… {state.progress ?? 0}%
+          </p>
+          <Progress value={(state.progress ?? 10) / 100} />
         </div>
       )}
 
       {state.phase === 'ready' && <p className="text-xs">Installing… the app will restart.</p>}
 
       {state.phase === 'error' && (
-        <div className="rounded-md border border-[--color-stale]/40 p-3 text-xs text-[--color-stale]">
+        <div className="rounded-xl border border-[var(--color-stale)]/40 bg-[var(--color-stale)]/5 p-3.5 text-xs text-[var(--color-stale)]">
           Update failed: {state.message}. Your current version keeps working — try again later.
         </div>
       )}

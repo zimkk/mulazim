@@ -1,4 +1,5 @@
 import { Modal } from '@/components/ui/Modal'
+import { Kbd } from '@/components/ui/Kbd'
 import { CommandPalette } from '@/components/CommandPalette'
 import { ProjectFormModal } from '@/components/projects/ProjectFormModal'
 import { QuickAddTask } from '@/components/tasks/QuickAddTask'
@@ -25,30 +26,31 @@ export function GlobalOverlays() {
       <ProjectFormModal open={overlay === 'newProject'} onClose={close} />
 
       <Modal open={overlay === 'newTask'} onClose={close} title="New task" width="md">
-        <p className="mb-2 text-xs text-[--color-text-muted]">
+        <p className="mb-2 text-xs text-[var(--color-text-muted)]">
           Pick a project, type a title, press Enter.
         </p>
         <QuickAddTask onCreated={close} />
       </Modal>
 
       <Modal open={overlay === 'shortcuts'} onClose={close} title="Keyboard shortcuts" width="sm">
-        <ul className="space-y-2 text-sm">
+        <ul className="text-sm">
           {(Object.keys(KEYBINDING_LABEL) as KeybindingAction[]).map((a) => (
-            <li key={a} className="flex items-center justify-between gap-4">
-              <span className="text-[--color-text-muted]">{KEYBINDING_LABEL[a]}</span>
-              <kbd className="rounded border border-[--color-border] bg-[--color-surface-2] px-1.5 py-0.5 text-xs">
-                {prettyBinding(keybindings[a])}
-              </kbd>
+            <li
+              key={a}
+              className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] py-2.5 last:border-b-0"
+            >
+              <span className="text-[var(--color-text-muted)]">{KEYBINDING_LABEL[a]}</span>
+              <Kbd>{prettyBinding(keybindings[a])}</Kbd>
             </li>
           ))}
-          <li className="flex items-center justify-between gap-4">
-            <span className="text-[--color-text-muted]">Close a dialog</span>
-            <kbd className="rounded border border-[--color-border] bg-[--color-surface-2] px-1.5 py-0.5 text-xs">
-              Esc
-            </kbd>
+          <li className="flex items-center justify-between gap-4 py-2.5">
+            <span className="text-[var(--color-text-muted)]">Close a dialog</span>
+            <Kbd>Esc</Kbd>
           </li>
-          <li className="pt-1 text-xs text-[--color-text-subtle]">Rebind these in Settings → Keyboard.</li>
         </ul>
+        <p className="mt-3 text-xs text-[var(--color-text-subtle)]">
+          Rebind these in Settings → Keyboard.
+        </p>
       </Modal>
     </>
   )

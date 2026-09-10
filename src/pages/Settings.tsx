@@ -7,13 +7,13 @@ import {
   Keyboard,
   Palette,
   RefreshCw,
-  Search,
   SlidersHorizontal,
   User,
   Workflow,
 } from 'lucide-react'
 import { Page, PageHeader } from '@/components/layout/AppShell'
-import { Input } from '@/components/ui/Field'
+import { SearchInput } from '@/components/ui/Toolbar'
+import { m } from '@/lib/motion'
 import { cn } from '@/lib/utils/cn'
 import {
   AboutSection,
@@ -104,39 +104,52 @@ export default function Settings() {
     <Page>
       <PageHeader title="Settings" subtitle="Preferences sync to every device you sign in from." />
       <div className="flex gap-6">
-        <nav className="w-48 shrink-0 space-y-1">
-          <div className="relative mb-2">
-            <Search className="absolute top-2 left-2 size-3.5 text-[--color-text-subtle]" />
-            <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search settings"
-              className="h-8 pl-7 text-xs"
-            />
-          </div>
+        <nav className="w-52 shrink-0 space-y-1">
+          <SearchInput
+            value={q}
+            onValueChange={setQ}
+            placeholder="Search settings"
+            className="mb-3"
+          />
           {matches.length === 0 && (
-            <p className="px-2 py-2 text-xs text-[--color-text-subtle]">No settings match.</p>
+            <p className="px-2 py-2 text-xs text-[var(--color-text-subtle)]">No settings match.</p>
           )}
-          {matches.map(({ id, label, icon: Icon }) => (
-            <NavLink
-              key={id}
-              to={id === 'account' ? '/settings' : `/settings/${id}`}
-              end
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors',
-                  isActive || active.id === id
-                    ? 'bg-[--color-surface-2] font-medium text-[--color-text]'
-                    : 'text-[--color-text-muted] hover:bg-[--color-surface-2] hover:text-[--color-text]',
-                )
-              }
-            >
-              <Icon className="size-4 shrink-0" />
-              {label}
-            </NavLink>
-          ))}
+          {matches.map(({ id, label, icon: Icon }) => {
+            const isActive = active.id === id
+            return (
+              <NavLink
+                key={id}
+                to={id === 'account' ? '/settings' : `/settings/${id}`}
+                end
+                className={cn(
+                  'relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors',
+                  isActive
+                    ? 'bg-[var(--color-accent-soft)] font-medium text-[var(--color-accent)] ring-1 ring-inset ring-[var(--color-accent)]/25'
+                    : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)]',
+                )}
+              >
+                {isActive && (
+                  <m.span
+                    layoutId="settings-active-rail"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    className="absolute top-2 bottom-2 -left-2 w-0.5 rounded-full bg-[var(--color-accent)]"
+                  />
+                )}
+                <Icon className="size-4 shrink-0" />
+                <span>{label}</span>
+              </NavLink>
+            )
+          })}
         </nav>
-        <div className="min-w-0 max-w-2xl flex-1">{active.el}</div>
+        <m.div
+          key={active.id}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="min-w-0 max-w-2xl flex-1"
+        >
+          {active.el}
+        </m.div>
       </div>
     </Page>
   )

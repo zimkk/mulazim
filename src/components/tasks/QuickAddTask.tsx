@@ -63,12 +63,15 @@ export function QuickAddTask({
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex items-center gap-2">
+    <form
+      onSubmit={onSubmit}
+      className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-sm focus-within:border-[var(--color-accent)]/50 focus-within:shadow-md"
+    >
       {!projectId && activeProjects.length > 0 && (
         <Select
           value={pickedProject || targetProject}
           onChange={(e) => setPickedProject(e.target.value)}
-          className="h-9 w-44"
+          className="h-9 w-44 border-0 bg-[var(--color-surface-2)]"
         >
           {activeProjects.map((p) => (
             <option key={p.id} value={p.id}>
@@ -81,7 +84,7 @@ export function QuickAddTask({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Add a task…  try  #design  !urgent  tomorrow"
-        className="flex-1"
+        className="flex-1 border-0 bg-transparent shadow-none focus-visible:outline-0"
       />
       <Button
         type="submit"

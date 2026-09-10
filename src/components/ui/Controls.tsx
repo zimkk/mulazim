@@ -16,14 +16,14 @@ export function SettingRow({
   return (
     <div
       className={cn(
-        'flex gap-4 border-b border-[--color-border] py-3 last:border-b-0',
+        'flex gap-4 border-b border-[var(--color-border)] py-3 last:border-b-0',
         stacked ? 'flex-col' : 'items-center justify-between',
       )}
     >
       <div className="min-w-0">
-        <p className="text-sm font-medium text-[--color-text]">{title}</p>
+        <p className="text-sm font-medium text-[var(--color-text)]">{title}</p>
         {description && (
-          <p className="mt-0.5 text-xs text-[--color-text-muted]">{description}</p>
+          <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{description}</p>
         )}
       </div>
       <div className={cn(stacked ? '' : 'shrink-0')}>{control}</div>
@@ -47,14 +47,16 @@ export function Toggle({
       aria-label={label}
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors',
-        checked ? 'bg-[--color-accent]' : 'bg-[--color-surface-2] border border-[--color-border]',
+        'relative inline-flex h-[1.375rem] w-10 shrink-0 items-center rounded-full transition-colors',
+        checked
+          ? 'bg-[var(--color-accent)]'
+          : 'border border-[var(--color-border-strong)] bg-[var(--color-surface-2)]',
       )}
     >
       <span
         className={cn(
-          'inline-block size-4 transform rounded-full bg-white shadow transition-transform',
-          checked ? 'translate-x-4' : 'translate-x-0.5',
+          'inline-block size-[1.125rem] rounded-full bg-white shadow-sm transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]',
+          checked ? 'translate-x-[1.25rem]' : 'translate-x-[0.1875rem]',
         )}
       />
     </button>
@@ -71,21 +73,24 @@ export function Segmented<T extends string>({
   options: { value: T; label: ReactNode }[]
 }) {
   return (
-    <div className="inline-flex rounded-md border border-[--color-border] bg-[--color-surface] p-0.5">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          onClick={() => onChange(o.value)}
-          className={cn(
-            'rounded px-2.5 py-1 text-xs font-medium transition-colors',
-            value === o.value
-              ? 'bg-[--color-accent] text-[--color-accent-fg]'
-              : 'text-[--color-text-muted] hover:text-[--color-text]',
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
+    <div className="inline-flex rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] p-0.5">
+      {options.map((o) => {
+        const isActive = value === o.value
+        return (
+          <button
+            key={o.value}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              'rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150',
+              isActive
+                ? 'bg-[var(--color-accent)] text-[var(--color-accent-fg)] shadow-xs'
+                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
+            )}
+          >
+            {o.label}
+          </button>
+        )
+      })}
     </div>
   )
 }

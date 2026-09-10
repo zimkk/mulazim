@@ -4,20 +4,18 @@ import { cn } from '@/lib/utils/cn'
 import { Button } from './Button'
 
 export function Spinner({ className }: { className?: string }) {
-  return <Loader2 className={cn('size-4 animate-spin text-[--color-text-muted]', className)} />
+  return <Loader2 className={cn('size-4 animate-spin text-[var(--color-text-muted)]', className)} />
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return (
-    <div className={cn('animate-pulse rounded bg-[--color-surface-2]', className)} aria-hidden />
-  )
+  return <div className={cn('skeleton rounded-md', className)} aria-hidden />
 }
 
 export function SkeletonRows({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {Array.from({ length: rows }).map((_, i) => (
-        <Skeleton key={i} className="h-10 w-full" />
+        <Skeleton key={i} className="h-12 w-full" />
       ))}
     </div>
   )
@@ -36,11 +34,13 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
-      {icon && <div className="text-[--color-text-subtle]">{icon}</div>}
-      <p className="text-sm font-medium text-[--color-text]">{title}</p>
-      {description && (
-        <p className="max-w-sm text-xs text-[--color-text-muted]">{description}</p>
+      {icon && (
+        <div className="mb-1 flex size-11 items-center justify-center rounded-xl bg-[var(--color-surface-2)] text-[var(--color-text-subtle)] ring-1 ring-inset ring-[var(--color-border)]">
+          {icon}
+        </div>
       )}
+      <p className="text-sm font-medium text-[var(--color-text)]">{title}</p>
+      {description && <p className="max-w-sm text-xs text-[var(--color-text-muted)]">{description}</p>}
       {action && <div className="mt-2">{action}</div>}
     </div>
   )
@@ -55,8 +55,10 @@ export function ErrorState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-      <AlertTriangle className="size-5 text-[--color-stale]" />
-      <p className="text-sm text-[--color-text]">{message}</p>
+      <div className="flex size-11 items-center justify-center rounded-xl bg-[var(--color-stale)]/10 text-[var(--color-stale)] ring-1 ring-inset ring-[var(--color-stale)]/20">
+        <AlertTriangle className="size-5" />
+      </div>
+      <p className="text-sm text-[var(--color-text)]">{message}</p>
       {onRetry && (
         <Button size="sm" onClick={onRetry}>
           Retry

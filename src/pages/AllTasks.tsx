@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Search, Trash2, X } from 'lucide-react'
+import { BookmarkPlus, ListChecks, Trash2, X } from 'lucide-react'
 import { Page, PageHeader } from '@/components/layout/AppShell'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Input, Select } from '@/components/ui/Field'
+import { Select } from '@/components/ui/Field'
+import { SearchInput } from '@/components/ui/Toolbar'
+import { AnimatePresence, m, spring, stagger, fadeUp } from '@/lib/motion'
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/States'
 import { useToast } from '@/components/Toast'
 import { TaskRow } from '@/components/tasks/TaskRow'
@@ -144,34 +146,36 @@ export default function AllTasks() {
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-[--color-text-muted]">Views</span>
+        <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--color-text-subtle)]">
+          Views
+        </span>
         {perspectives.map((p) => (
           <span
             key={p.id}
-            className="inline-flex items-center gap-1 rounded-md border border-[--color-border] bg-[--color-surface] px-2 py-1 text-xs"
+            className="group inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] py-1 pr-1.5 pl-2.5 text-xs shadow-xs transition-colors hover:border-[var(--color-accent)]/40"
           >
-            <button onClick={() => applyPerspective(p.id)} className="hover:text-[--color-accent]">
+            <button
+              onClick={() => applyPerspective(p.id)}
+              className="font-medium transition-colors hover:text-[var(--color-accent)]"
+            >
               {p.name}
             </button>
             <button
               onClick={() => deletePerspective(p.id)}
-              className="text-[--color-text-subtle] hover:text-[--color-stale]"
+              className="rounded-full p-0.5 text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-stale)]/10 hover:text-[var(--color-stale)]"
               aria-label={`Delete ${p.name}`}
             >
               <X className="size-3" />
             </button>
           </span>
         ))}
-        <Button size="sm" onClick={savePerspective}>
+        <Button size="sm" variant="ghost" icon={<BookmarkPlus className="size-3.5" />} onClick={savePerspective}>
           Save current view
         </Button>
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <Search className="absolute top-2.5 left-2.5 size-4 text-[--color-text-subtle]" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" className="w-52 pl-8" />
-        </div>
+      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-sm">
+        <SearchInput value={q} onValueChange={setQ} placeholder="Search" className="w-52" />
         <Select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className="w-32">
           <option value="open">Open</option>
           <option value="all">All statuses</option>
@@ -229,9 +233,15 @@ export default function AllTasks() {
         </div>
       </div>
 
+      <AnimatePresence>
       {selected.size > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-[--color-accent]/40 bg-[--color-accent]/8 px-3 py-2 text-sm">
-          <span className="font-medium">{selected.size} selected</span>
+        <m.div
+          initial={{ opacity: 0, y: -8, height: 0 }}
+          animate={{ opacity: 1, y: 0, height: 'auto', transition: spring }}
+          exit={{ opacity: 0, y: -8, height: 0, transition: { duration: 0.15 } }}
+          className="mb-3 flex flex-wrap items-center gap-2 overflow-hidden rounded-xl border border-[var(--color-accent)]/40 bg-[var(--color-accent-soft)] px-3 py-2.5 text-sm shadow-sm"
+        >
+          <span className="font-medium tabular-nums">{selected.size} selected</span>
           <Select
             className="h-8 w-32"
             value=""
@@ -271,12 +281,14 @@ export default function AllTasks() {
           </Button>
           <button
             onClick={() => setSelected(new Set())}
-            className="ml-auto text-[--color-text-muted] hover:text-[--color-text]"
+            aria-label="Clear selection"
+            className="ml-auto rounded-full p-1 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]"
           >
             <X className="size-4" />
           </button>
-        </div>
+        </m.div>
       )}
+      </AnimatePresence>
 
       {isError ? (
         <ErrorState message="Unable to load tasks." onRetry={refetch} />
@@ -284,26 +296,32 @@ export default function AllTasks() {
         <SkeletonRows rows={8} />
       ) : filtered.length === 0 ? (
         <Card>
-          <EmptyState title="No tasks match" description="Loosen the filters or add a task." />
+          <EmptyState
+            icon={<ListChecks className="size-5" />}
+            title="No tasks match"
+            description="Loosen the filters or add a task."
+          />
         </Card>
       ) : (
-        <div className="space-y-3">
+        <m.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
           {groups.map((g) => (
-            <Card key={g.key}>
-              <CardHeader title={g.key} count={g.tasks.length} />
-              {g.tasks.map((t) => (
-                <TaskRow
-                  key={t.id}
-                  task={t}
-                  showProject={groupBy !== 'project'}
-                  selected={selected.has(t.id)}
-                  onSelect={toggleSelect}
-                  onEdit={setEdit}
-                />
-              ))}
-            </Card>
+            <m.div key={g.key} variants={fadeUp}>
+              <Card>
+                <CardHeader title={g.key} count={g.tasks.length} />
+                {g.tasks.map((t) => (
+                  <TaskRow
+                    key={t.id}
+                    task={t}
+                    showProject={groupBy !== 'project'}
+                    selected={selected.has(t.id)}
+                    onSelect={toggleSelect}
+                    onEdit={setEdit}
+                  />
+                ))}
+              </Card>
+            </m.div>
           ))}
-        </div>
+        </m.div>
       )}
 
       {edit && (
