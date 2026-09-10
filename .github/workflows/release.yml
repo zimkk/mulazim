@@ -11,7 +11,56 @@ permissions:
   contents: write
 
 jobs:
+  # GitHub makes a published release immutable the moment it is created, so
+  # assets can only be attached while it is still a draft. Create the draft
+  # first, have every runner upload into it, then publish once at the end.
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.draft.outputs.result }}
+    steps:
+      - uses: actions/github-script@v9
+        id: draft
+        with:
+          result-encoding: string
+          script: |
+            const tag = context.ref.replace('refs/tags/', '')
+            const body = `Personal project & task command center — cloud-backed, self-updating.
+
+            ### Install
+            | OS | Download | Notes |
+            |----|----------|-------|
+            | **Windows** | \`*-setup.exe\` (recommended) or \`*.msi\` | Choose your language, install for just you (no admin) or for everyone, and pick the install folder. WebView2 is bundled — nothing else to install. |
+            | **macOS** | \`*.dmg\` | Apple-silicon + Intel universal. Not yet notarized: right-click the app → **Open** once, or allow it in System Settings → Privacy & Security. |
+            | **Linux — Debian/Ubuntu** | \`*.deb\` | \`sudo apt install ./Mulazim*.deb\` (resolves dependencies). |
+            | **Linux — Fedora/RHEL** | \`*.rpm\` | \`sudo dnf install ./Mulazim*.rpm\`. |
+            | **Linux — other** | \`*.AppImage\` | \`chmod +x\` and run; no install needed. |
+
+            Once installed, the app checks for updates on launch and updates itself.
+
+            > **Windows "Unknown publisher" warning:** these builds are not yet
+            > Authenticode-signed, so SmartScreen will warn. Click **More info →
+            > Run anyway**. Signing needs a paid code-signing certificate; see
+            > \`RELEASE.md\` section 3.`
+
+            const existing = await github.rest.repos.listReleases({
+              owner: context.repo.owner, repo: context.repo.repo, per_page: 100,
+            })
+            const found = existing.data.find((r) => r.tag_name === tag)
+            if (found) {
+              core.info(`Reusing release ${found.id} for ${tag} (draft=${found.draft})`)
+              return String(found.id)
+            }
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner, repo: context.repo.repo,
+              tag_name: tag, name: `Mulazim ${tag}`, body,
+              draft: true, prerelease: false,
+            })
+            core.info(`Created draft release ${data.id} for ${tag}`)
+            return String(data.id)
+
   build:
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
@@ -119,26 +168,21 @@ jobs:
           # lines while the secrets are empty -- tauri-action then tries (and
           # fails) to import an empty keychain certificate.
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Mulazim ${{ github.ref_name }}'
-          releaseBody: |
-            Personal project & task command center — cloud-backed, self-updating.
-
-            ### Install
-            | OS | Download | Notes |
-            |----|----------|-------|
-            | **Windows** | `*-setup.exe` (recommended) or `*.msi` | Choose your language, install for just you (no admin) or for everyone, and pick the install folder. WebView2 is bundled — nothing else to install. |
-            | **macOS** | `*.dmg` | Apple-silicon + Intel universal. Not yet notarized: right-click the app → **Open** once, or allow it in System Settings → Privacy & Security. |
-            | **Linux — Debian/Ubuntu** | `*.deb` | `sudo apt install ./Mulazim*.deb` (resolves dependencies). |
-            | **Linux — Fedora/RHEL** | `*.rpm` | `sudo dnf install ./Mulazim*.rpm`. |
-            | **Linux — other** | `*.AppImage` | `chmod +x` and run; no install needed. |
-
-            Once installed, the app checks for updates on launch and updates itself.
-
-            > **Windows "Unknown publisher" warning:** these builds are not yet
-            > Authenticode-signed, so SmartScreen will warn. Click **More info →
-            > Run anyway**. Signing needs a paid code-signing certificate; see
-            > `RELEASE.md` section 3.
-          releaseDraft: false
-          prerelease: false
+          releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }}
+
+  # Flipping draft -> published is the point the release becomes immutable, so
+  # it must happen after every runner has finished uploading.
+  publish-release:
+    needs: [create-release, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner, repo: context.repo.repo,
+              release_id: ${{ needs.create-release.outputs.release_id }},
+              draft: false, prerelease: false,
+            })
+            core.info('Release published')

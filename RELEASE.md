@@ -3,6 +3,13 @@
 `.github/workflows/release.yml` is **tag-driven**: push a `v*` tag → GitHub
 Actions builds + signs the app on macOS, Linux and Windows runners in parallel,
 generates the updater manifest (`latest.json`), and publishes a GitHub Release.
+
+It runs as three jobs — `create-release` (opens a **draft**), `build` (a runner
+per OS, uploading into that draft), then `publish-release` (flips it to
+published). That order is required, not stylistic: GitHub marks a published
+release **immutable**, so assets can only be attached while it is still a draft.
+A single job that creates a published release and then uploads will fail with
+*"Cannot upload assets to an immutable release"*.
 Installed apps pick it up on next launch (`ARCHITECTURE.md` §33–§39).
 
 ## One-time setup
