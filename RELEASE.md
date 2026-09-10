@@ -38,7 +38,41 @@ gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --body ""
 The workflow normalizes `TAURI_SIGNING_PRIVATE_KEY` (strips any stray
 whitespace / `%` a paste can add) before use.
 
-### 3. (Optional) macOS notarization
+### 3. (Optional) Windows code signing — removes "Unknown publisher"
+
+Windows shows **"Windows protected your PC — Unknown publisher"** for any
+executable that is not Authenticode-signed by a certificate chaining to a CA
+Windows trusts. This is a property of the binary, not of the installer UI: no
+NSIS/WiX setting, manifest entry or metadata field removes it. The only fix is
+a real code-signing certificate.
+
+| Option | Cost (approx/yr) | SmartScreen behaviour |
+|---|---|---|
+| **OV** (organisation validated) | $150–400 | Warning persists until the certificate builds download reputation — weeks to months |
+| **EV** (extended validation) | $250–600 | Trusted immediately; no reputation period |
+| **Azure Trusted Signing** | ~$10/month | Microsoft-run; needs a verified org (or 3+ year old individual identity) |
+
+Certificates are issued to a verified identity, so expect ID/business checks.
+Since June 2023 all new OV/EV keys must live on FIPS-140-2 hardware (HSM/token),
+so CI signing usually means a cloud-HSM provider (Azure Trusted Signing,
+DigiCert KeyLocker, SSL.com eSigner) rather than a `.pfx` file.
+
+If you do have an exportable `.pfx`:
+
+```bash
+base64 -w0 cert.pfx | gh secret set WINDOWS_CERTIFICATE
+gh secret set WINDOWS_CERTIFICATE_PASSWORD --body "<pfx password>"
+```
+
+The workflow's *"Sign Windows binaries"* step imports it, injects the thumbprint
+into `tauri.conf.json` and signs. **Without those secrets the step is skipped
+and the build proceeds unsigned** — no action needed to keep the current
+behaviour.
+
+Until then, users can still install: click **More info → Run anyway** on the
+SmartScreen prompt.
+
+### 4. (Optional) macOS notarization
 
 Unsigned builds run but Gatekeeper warns ("right-click → Open" the first time).
 To notarize (needs a paid Apple Developer account): add the `APPLE_CERTIFICATE`,

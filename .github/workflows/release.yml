@@ -74,6 +74,29 @@ jobs:
         env:
           SIGNING_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
+      # Authenticode signing is what removes the "Unknown publisher" SmartScreen
+      # warning on Windows. It needs a real code-signing certificate from a CA —
+      # no configuration can substitute for it. When WINDOWS_CERTIFICATE is not
+      # set this step does nothing and the build proceeds unsigned, exactly as
+      # before. See RELEASE.md section 4.
+      - name: Sign Windows binaries (skipped when no certificate is configured)
+        if: matrix.platform == 'windows-latest' && secrets.WINDOWS_CERTIFICATE != ''
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP 'cert.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
+          $pw = ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force
+          $cert = Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My -Password $pw
+          Remove-Item $pfx -Force
+          Write-Host "Signing as: $($cert.Subject)"
+          # Tauri reads the thumbprint from tauri.conf.json, so inject it there.
+          # Node rather than ConvertTo-Json: PowerShell rewrites the whole file
+          # and mangles nested structures at depth.
+          node -e "const fs=require('fs');const p='src-tauri/tauri.conf.json';const c=JSON.parse(fs.readFileSync(p,'utf8'));c.bundle.windows.certificateThumbprint=process.argv[1];fs.writeFileSync(p,JSON.stringify(c,null,2)+'\n');" $cert.Thumbprint
+
       - name: Build, sign and publish the desktop app
         uses: tauri-apps/tauri-action@v0
         env:
@@ -98,13 +121,18 @@ jobs:
             ### Install
             | OS | Download | Notes |
             |----|----------|-------|
-            | **Windows** | `*-setup.exe` (recommended) or `*.msi` | The installer bundles the WebView2 bootstrapper — nothing else to install. |
+            | **Windows** | `*-setup.exe` (recommended) or `*.msi` | Choose your language, install for just you (no admin) or for everyone, and pick the install folder. WebView2 is bundled — nothing else to install. |
             | **macOS** | `*.dmg` | Apple-silicon + Intel universal. Not yet notarized: right-click the app → **Open** once, or allow it in System Settings → Privacy & Security. |
             | **Linux — Debian/Ubuntu** | `*.deb` | `sudo apt install ./Grid*.deb` (resolves dependencies). |
             | **Linux — Fedora/RHEL** | `*.rpm` | `sudo dnf install ./Grid*.rpm`. |
             | **Linux — other** | `*.AppImage` | `chmod +x` and run; no install needed. |
 
             Once installed, the app checks for updates on launch and updates itself.
+
+            > **Windows "Unknown publisher" warning:** these builds are not yet
+            > Authenticode-signed, so SmartScreen will warn. Click **More info →
+            > Run anyway**. Signing needs a paid code-signing certificate; see
+            > `RELEASE.md` section 3.
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

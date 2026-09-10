@@ -93,7 +93,13 @@ npm run lint
 npm run build
 npm run test:e2e   # API round-trip against the Supabase project in .env
 npm run test:ui    # headless-Chromium walk-through of the built app
+npm run test:rls   # tenant-isolation audit: two users, every table, every verb
 ```
+
+`test:rls` is the one to run after any schema change. It creates two accounts,
+has one populate all 12 tables, then has the other attempt to read, update,
+delete and spoof-insert every row — asserting that Row Level Security actually
+holds rather than trusting the migration files.
 
 `test:ui` needs a server running (`npm run build && npm run preview -- --port
 4173`) and Chrome/Chromium at `/usr/bin/chromium` (override with `CHROME=`).
