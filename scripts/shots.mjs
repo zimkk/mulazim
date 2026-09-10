@@ -43,6 +43,8 @@ await page.goto(BASE, { waitUntil: 'networkidle2' })
 await clickText('button', "Don't have an account? Sign up")
 await byText('h1', 'Create your account')
 const email = `gm-shots-${Date.now()}@example.com`
+// A real display name keeps the dashboard greeting presentable in screenshots.
+await page.type('input[autocomplete="name"]', 'Jordan')
 await page.type('input[type="email"]', email)
 await page.type('input[type="password"]', 'Passw0rd!shots')
 await clickText('button', 'Sign up')

@@ -4,15 +4,26 @@ A personal, cross-platform desktop project & task tracker. One place to see ever
 active piece of work — freelance clients, company tasks, personal projects — so
 nothing gets neglected.
 
-Built with **Tauri 2 · Rust · React 19 · TypeScript · Tailwind · Zustand ·
-TanStack Query · Supabase (Auth + Postgres + RLS)**. Ships signed, self-updating
-installers for macOS, Linux and Windows via GitHub Actions.
+Built with **Tauri 2 · Rust · React 19 · TypeScript · Tailwind CSS v4 · Motion ·
+Zustand · TanStack Query · Supabase (Auth + Postgres + RLS)**. Ships signed,
+self-updating installers for macOS, Linux and Windows via GitHub Actions.
 
 See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full design.
 
+## Screenshots
+
+| Dashboard (dark) | Dashboard (light) |
+|---|---|
+| ![Dashboard, dark theme](./docs/screenshots/dashboard-dark.png) | ![Dashboard, light theme with the violet accent](./docs/screenshots/dashboard-light.png) |
+
+| Project detail | Sign in |
+|---|---|
+| ![Project detail with tasks, notes and activity](./docs/screenshots/project-detail.png) | ![Sign-in screen](./docs/screenshots/login.png) |
+
 ## Features
 
-- Dashboard with a deterministic "what needs attention now" queue
+- Dashboard with a deterministic "what needs attention now" queue, plus at-a-glance
+  counters for overdue / due-soon / in-progress work
 - Clients, projects (type / status / priority / deadline / health / review
   cadence), tasks (subtasks, tags, recurrence, start vs. due date, estimates)
 - Views: Today, Upcoming, Calendar, All Tasks (filters + grouping + bulk edit),
@@ -24,6 +35,25 @@ See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full design.
 - Themes (light/dark/system), 6 accent colours, density & font-size controls
 - Soft-delete + Trash, JSON/CSV/Markdown export, JSON import
 - Self-updating; multi-device via a single cloud account
+
+## Design system
+
+The UI is built on CSS custom properties declared in Tailwind v4's `@theme`
+block (`src/index.css`): a neutral scale, an accent ramp, semantic health
+colours, and elevation/radius scales. Theme, accent, density and font size are
+attributes on `<html>` (`.dark`, `data-accent`, `data-density`,
+`data-font-size`), so a preference change restyles the whole app without a
+re-render.
+
+Animation lives in [`src/lib/motion.ts`](./src/lib/motion.ts) — shared spring and
+easing presets used for modals, list stagger, page transitions and count-up
+figures. Every animation is suppressed when the user enables *Reduce motion* or
+their OS reports `prefers-reduced-motion`.
+
+> **Note on Tailwind v4:** reference theme variables as
+> `bg-[var(--color-accent)]`, never `bg-[--color-accent]`. The latter compiles to
+> the literal `background-color: --color-accent`, which browsers discard
+> silently — the class appears to work but paints nothing.
 
 ## Prerequisites
 
@@ -80,13 +110,18 @@ secrets, then `git tag vX.Y.Z && git push origin vX.Y.Z`. See
 
 ```
 src/
-  components/   ui primitives, layout, feature components
-  pages/        route screens
-  lib/api/      TanStack Query hooks (queries + mutations) per entity
-  lib/utils/    health, staleness, recommendations, dates, recurrence, …
-  stores/       Zustand (auth, ui)
+  components/ui/   design-system primitives (Button, Card, Badge, Modal,
+                   Stat, Progress, Kbd, Toolbar, States, …)
+  components/      layout shell + feature components
+  pages/           route screens
+  lib/motion.ts    shared animation presets
+  lib/api/         TanStack Query hooks (queries + mutations) per entity
+  lib/utils/       health, staleness, recommendations, dates, recurrence, …
+  stores/          Zustand (auth, ui)
+  index.css        Tailwind v4 @theme tokens, palettes, base styles
 src-tauri/            Rust / Tauri shell, config, capabilities, native menu
 supabase/migrations/  versioned schema
+docs/screenshots/     images used by this README
 .github/workflows/    3-OS release pipeline
 ```
 
